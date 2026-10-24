@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "sdk": "1.0",
+  "kind": "synth",
+  "description": "Two oscillators, from soft bells to tangled metallic tones.",
+  "identity": {
+    "engine": 34,
+    "page": 82
+  }
+}

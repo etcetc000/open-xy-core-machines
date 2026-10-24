@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "sdk": "1.0",
+  "kind": "synth",
+  "description": "A plucked string: a pick excites a tuned delay line that rings and fades.",
+  "identity": {
+    "engine": 36,
+    "page": 84
+  },
+  "presetDefaults": {
+    "amp": {
+      "release": 16384
+    }
+  }
+}

@@ -1,0 +1,6 @@
+* text=auto eol=lf
+# Machine records keep their exact bytes on every host.
+machines/*/machine.json -text whitespace=cr-at-eol
+machines/*/definition.json -text whitespace=cr-at-eol
+# Preserve licensed upstream files byte-for-byte, including their whitespace.
+machines/*/vendor/** -text -whitespace

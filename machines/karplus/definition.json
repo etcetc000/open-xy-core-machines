@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "id": "karplus",
+  "name": "Karplus",
+  "parameters": [
+    {
+      "id": "bright",
+      "label": "Bright",
+      "default": 0.7,
+      "mapping": {
+        "kind": "linear",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "display": "percent"
+    },
+    {
+      "id": "pick",
+      "label": "Pick",
+      "default": 0.3,
+      "mapping": {
+        "kind": "linear",
+        "minimum": 0.05,
+        "maximum": 0.5
+      },
+      "display": "percent"
+    },
+    {
+      "id": "damp",
+      "label": "Damp",
+      "default": 0.4,
+      "mapping": {
+        "kind": "linear",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "display": "percent"
+    },
+    {
+      "id": "detune",
+      "label": "Detune",
+      "default": 0,
+      "mapping": {
+        "kind": "linear",
+        "minimum": 0,
+        "maximum": 25
+      },
+      "display": "percent"
+    }
+  ],
+  "presets": {
+    "Nylon": {
+      "bright": 0.45,
+      "pick": 0.35,
+      "damp": 0.6,
+      "detune": 0
+    },
+    "Steel": {
+      "bright": 0.95,
+      "pick": 0.12,
+      "damp": 0.15,
+      "detune": 0
+    },
+    "Twelve": {
+      "bright": 0.85,
+      "pick": 0.2,
+      "damp": 0.3,
+      "detune": 0.35
+    },
+    "Felt": {
+      "bright": 0.3,
+      "pick": 0.5,
+      "damp": 1,
+      "detune": 0.1
+    }
+  },
+  "resources": {
+    "voiceBytes": 8228,
+    "voiceAlignment": 4,
+    "voiceCapacity": 8,
+    "sharedBytes": 0,
+    "outputPeakQ31": 1073741824,
+    "display": {
+      "stateBytes": 160,
+      "stateAlignment": 4,
+      "paths": 4,
+      "points": 64,
+      "nodes": 11,
+      "texts": 0,
+      "palette": 4
+    }
+  }
+}

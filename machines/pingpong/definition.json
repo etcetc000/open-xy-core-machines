@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "id": "pingpong",
+  "name": "Ping Pong",
+  "parameters": [
+    {
+      "id": "time",
+      "label": "Time",
+      "default": 0.5,
+      "mapping": {
+        "kind": "exponential",
+        "minimum": 10,
+        "maximum": 1000
+      },
+      "display": "duration"
+    },
+    {
+      "id": "feedback",
+      "label": "Feedback",
+      "default": 0.5,
+      "mapping": {
+        "kind": "linear",
+        "minimum": 0,
+        "maximum": 0.95
+      },
+      "display": "percent"
+    },
+    {
+      "id": "tone",
+      "label": "Tone",
+      "default": 0.7,
+      "mapping": {
+        "kind": "linear",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "display": "percent"
+    },
+    {
+      "id": "dry",
+      "label": "Dry",
+      "default": 1,
+      "mapping": {
+        "kind": "linear",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "display": "percent"
+    }
+  ],
+  "presets": {},
+  "resources": {
+    "bufferBytes": 352800
+  }
+}

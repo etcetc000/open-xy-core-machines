@@ -1,0 +1,5 @@
+# Build and preview output belongs outside this repository.
+local/
+__pycache__/
+*.pyc
+.DS_Store
