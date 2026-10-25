@@ -16,11 +16,12 @@ static opxy::i32 words[pingpong::kBufferWords];
 // Runs `blocks` blocks; input(n) is the sample n on both sides.
 template <class Input>
 static void run(pingpong::State& state, opxy::Buffer buffer, const opxy::i32* parameters, unsigned blocks,
-                Input input, std::vector<double>& left, std::vector<double>& right) {
+                Input input, std::vector<double>& left, std::vector<double>& right,
+                opxy::Transport transport = opxy::Transport{1500, 0, true}) {
     opxy::i32 l[opxy::block_frames], r[opxy::block_frames];
     for (unsigned b = 0; b < blocks; ++b) {
         for (unsigned i = 0; i < opxy::block_frames; ++i) l[i] = r[i] = input(b * opxy::block_frames + i);
-        pingpong::process(state, buffer, l, r, parameters);
+        pingpong::process(state, buffer, transport, l, r, parameters);
         for (unsigned i = 0; i < opxy::block_frames; ++i) {
             left.push_back(l[i] / 2147483648.0);
             right.push_back(r[i] / 2147483648.0);
@@ -35,11 +36,28 @@ static double peak(const std::vector<double>& x, size_t from, size_t to) {
     return m;
 }
 
+// The first sample on the left that is not silent: where the first repeat lands.
+static size_t first_repeat(const opxy::i32* parameters, opxy::Transport transport) {
+    for (opxy::u32 i = 0; i < pingpong::kBufferWords; ++i) words[i] = 0;
+    pingpong::State state;
+    pingpong::initialize(state);
+    std::vector<double> left, right;
+    run(state, opxy::Buffer{words, pingpong::kBufferWords}, parameters, 760,
+        [](unsigned n) { return n == 0 ? 0x40000000 : 0; }, left, right, transport);
+    for (size_t i = 0; i < left.size(); ++i)
+        if (left[i] != 0) return i;
+    return 0;
+}
+
+// Size word for stock delay's note length `index` (0 = 1/32 .. 7 = 1/2).
+static opxy::i32 size(unsigned index) { return static_cast<opxy::i32>(index * 0x10000000u + 0x08000000u); }
+
 int main() {
     const opxy::Buffer buffer = {words, pingpong::kBufferWords};
-    // Time 0.5 is 100 ms (4410 samples); bright tone, so repeats keep their shape.
-    const opxy::i32 parameters[8] = {0x40000000, 0x7fffffff / 2, 0x7fffffff, 0x7fffffff};
+    // At 150 BPM a sixteenth (Size 2) is 100 ms, 4410 samples; Fine centred.
+    const opxy::i32 parameters[8] = {size(2), 0x40000000, 0x7fffffff / 2, 0x7fffffff};
     const size_t d = 4410;
+    const double tone = 0.05 + 0.7 * 0.95;  // each crossing's one-pole filter, first sample
     // Stale buffer: a previous effect left loud data in the scratch memory.
     for (opxy::u32 i = 0; i < pingpong::kBufferWords; ++i) words[i] = (i & 1) ? 0x60000000 : -0x60000000;
     pingpong::State state;
@@ -51,9 +69,24 @@ int main() {
     const double first = peak(left, d - 2, d + 2), second = peak(right, 2 * d - 2, 2 * d + 2);
     const double third = peak(left, 3 * d - 2, 3 * d + 2);
     check("the first repeat is on the left at the set time", std::fabs(first - 0.5) < 0.01);
-    check("the second repeat is on the right, scaled by Feedback", std::fabs(second - 0.5 * 0.475) < 0.01);
-    check("the third is back on the left", std::fabs(third - 0.5 * 0.475 * 0.475) < 0.01);
+    check("the second repeat is on the right, scaled by Feedback", std::fabs(second - 0.5 * 0.475 * tone) < 0.01);
+    check("the third is back on the left", std::fabs(third - 0.5 * 0.475 * 0.475 * tone * tone) < 0.01);
     check("no repeat on the other side", peak(right, d - 2, d + 2) == 0 && peak(left, 2 * d - 2, 2 * d + 2) == 0);
+
+    // Size follows stock delay's note lengths at the tempo; Fine adds up to 50 ms.
+    const double beats[8] = {0.125, 0.1875, 0.25, 0.375, 0.5, 0.75, 1.0, 2.0};
+    for (unsigned i = 0; i < 7; ++i) {  // 1/2 at 120 BPM is longer than a line
+        const opxy::i32 p[8] = {size(i), 0x40000000, 0, 0x7fffffff};
+        const double expected = beats[i] * 44100 * 60 / 120;
+        check("each Size is stock delay's note length", std::fabs(first_repeat(p, {1200, 0, true}) - expected) <= 1.5);
+    }
+    const opxy::i32 later[8] = {size(4), 0x7fffffff, 0, 0x7fffffff}, earlier[8] = {size(4), 0, 0, 0x7fffffff};
+    check("Fine adds 50 ms", std::fabs(first_repeat(later, {1200, 0, true}) - (11025.0 + 2205)) <= 1.5);
+    check("Fine takes 50 ms", std::fabs(first_repeat(earlier, {1200, 0, true}) - (11025.0 - 2205)) <= 1.5);
+    check("no tempo plays as 120 BPM", first_repeat(later, {0, 0, false}) == first_repeat(later, {1200, 0, true}));
+    const opxy::i32 longest[8] = {size(7), 0x7fffffff, 0, 0x7fffffff};
+    check("a half note at a slow tempo stops at the line's length",
+          first_repeat(longest, {200, 0, false}) == pingpong::kLine - 2);
 
     // Outside a send there is no buffer: silence, and nothing written anywhere.
     pingpong::initialize(state);
@@ -62,7 +95,7 @@ int main() {
     check("silent without a buffer", peak(l2, 0, l2.size()) == 0 && peak(r2, 0, r2.size()) == 0);
 
     // Full Feedback and a loud burst still die away once the input stops.
-    const opxy::i32 loud[8] = {0, 0x7fffffff, 0x7fffffff, 0x7fffffff};  // shortest time, most feedback
+    const opxy::i32 loud[8] = {size(0), 0x40000000, 0x7fffffff, 0x7fffffff};  // shortest Size, most feedback
     pingpong::initialize(state);
     std::vector<double> l3, r3;
     run(state, buffer, loud, 690 * 6, [](unsigned n) {

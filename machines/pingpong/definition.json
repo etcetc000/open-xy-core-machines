@@ -4,13 +4,24 @@
   "name": "Ping Pong",
   "parameters": [
     {
-      "id": "time",
-      "label": "Time",
+      "id": "size",
+      "label": "Size",
+      "default": 0.65625,
+      "mapping": {
+        "kind": "linear",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "display": "division"
+    },
+    {
+      "id": "fine",
+      "label": "Fine",
       "default": 0.5,
       "mapping": {
-        "kind": "exponential",
-        "minimum": 10,
-        "maximum": 1000
+        "kind": "linear",
+        "minimum": -50,
+        "maximum": 50
       },
       "display": "duration"
     },
@@ -22,17 +33,6 @@
         "kind": "linear",
         "minimum": 0,
         "maximum": 0.95
-      },
-      "display": "percent"
-    },
-    {
-      "id": "tone",
-      "label": "Tone",
-      "default": 0.7,
-      "mapping": {
-        "kind": "linear",
-        "minimum": 0,
-        "maximum": 1
       },
       "display": "percent"
     },
@@ -50,6 +50,7 @@
   ],
   "presets": {},
   "resources": {
-    "bufferBytes": 352800
+    "bufferBytes": 352800,
+    "transport": 1
   }
 }
