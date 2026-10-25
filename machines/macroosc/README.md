@@ -7,7 +7,10 @@ lifecycle and drawing display. The [vendor license](vendor/LICENSE) and
 Four encoders: **Model**, **Timbre**, **Color** and **FM Ratio**; pressing the
 fourth switches it to **FM Depth** and back. Timbre/Color retain each model's
 upstream meaning. FM retunes the oscillator with a sine modulator at 0.5 to 8
-times the note frequency; depth 0 is the unmodulated model. The complete
+times the note frequency; depth 0 is the unmodulated model. Full depth swings
+the carrier between zero and twice the note, except where that would silence a
+model: blown, bowed and fluted sustain a pitch-tuned delay line, so full depth
+swings them by a tenth, a twentieth and a fiftieth, and the snare by half. The complete
 model/code/label list is in [models.hpp](models.hpp). The screen shows the
 model code on four glowing 14-segment characters and knobs for Timbre, Color
 and, joined on the right, FM Ratio and FM Depth; each knob always shows its
@@ -46,7 +49,10 @@ hard-coded per-sample/per-block decay constants retain their upstream values,
 so some decays are about 2.18 times slower and fixed filters lower. Half-rate
 models run at 22.05 kHz; naive digital waveforms alias more. Pitch updates occur
 at samples 0, 24 and 48 of each 64-sample callback, or every 8 samples while
-FM depth is above 0. Oversampling is not implemented.
+FM depth is above 0. Bell, drum and the low-pass and peak filters keep the
+24-sample steps under FM, because they decay or glide once per render call;
+smaller steps would shorten their decays. Under FM the low-pass filter still
+loses level on notes above about A5. Oversampling is not implemented.
 
 The module AD envelope, bit/rate reduction, signature waveshaper, quantizer and
 VCO drift are not ported. Stock processing remains downstream on the device;
