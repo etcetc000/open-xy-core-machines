@@ -13,6 +13,6 @@ struct State {
     opxy::i32 low_left, low_right;  // the tone filters on the repeats
 };
 void initialize(State& state);
-void process(State& state, opxy::Buffer buffer, opxy::Channel left, opxy::Channel right,
-             opxy::Parameters parameters);
+void process(State& state, opxy::Buffer buffer, const opxy::Transport& transport, opxy::Channel left,
+             opxy::Channel right, opxy::Parameters parameters);
 }

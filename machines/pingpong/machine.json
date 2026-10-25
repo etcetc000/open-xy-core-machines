@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "sdk": "1.1",
+  "sdk": "1.2",
   "kind": "effect",
   "description": "A ping-pong delay: repeats bounce left and right, each quieter and darker, up to a second apart.",
   "identity": {
-    "effect": 2,
+    "effect": 8,
     "page": 21
   },
   "dryParameter": "dry"
