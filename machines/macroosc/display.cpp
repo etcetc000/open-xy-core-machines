@@ -34,14 +34,14 @@ const unsigned kOctavesPerQ10 = 1496;     // Q15 halvings per Q10 second: one pe
 
 // Round only the screen caption; the parameter keeps its full Q31 precision.
 inline void amount(char* out, unsigned capacity, opxy::i32 value) {
-  const unsigned p = value < 0 ? 0 : ((static_cast<unsigned>(value) >> 10) * 100 + (1u << 20)) >> 21;
-  char text[4];
-  unsigned n = 0;
-  if (p >= 100) text[n++] = '1';
-  if (p >= 10) text[n++] = static_cast<char>('0' + p / 10 % 10);
-  text[n++] = static_cast<char>('0' + p % 10);
-  text[n] = 0;
-  opxy::draw::copy(out, capacity, text);
+    const unsigned p = value < 0 ? 0 : ((static_cast<unsigned>(value) >> 10) * 100 + (1u << 20)) >> 21;
+    char text[4];
+    unsigned n = 0;
+    if (p >= 100) text[n++] = '1';
+    if (p >= 10) text[n++] = static_cast<char>('0' + p / 10 % 10);
+    text[n++] = static_cast<char>('0' + p % 10);
+    text[n] = 0;
+    opxy::draw::copy(out, capacity, text);
 }
 // One decimal place; audio retains the full interpolated Q16 ratio.
 inline void ratio(char* out, unsigned capacity, unsigned q16) {
