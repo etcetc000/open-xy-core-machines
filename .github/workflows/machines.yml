@@ -9,11 +9,10 @@ on:
 permissions:
   contents: read
 env:
-  # The Open-XY SDK this repository is checked against. Use the SDK release
-  # that matches "sdk" in each machine.json.
+  # The Open-XY SDK this repository is checked against: its default branch,
+  # which builds every "sdk" version these machines declare.
   OPEN_XY_REPOSITORY: etcetc000/open-xy
-  # Until the SDK change that moves these machines here merges, check against its branch.
-  OPEN_XY_REF: machines/core-repo
+  OPEN_XY_REF: staging
 jobs:
   machines:
     runs-on: ubuntu-latest

@@ -10,6 +10,9 @@ struct Voice {
   opxy::u32 strike_pending;
   opxy::u32 delay_slot;
   opxy::u32 fm_phase;  // FM modulator phase, reset on each note
+  opxy::u32 hold_phase;  // Rate: Q16 progress to the next held sample
+  opxy::i32 held;        // Rate: the sample held, after bit reduction
+  opxy::i32 drift_walk;  // Drift: the random walk, -32767..32767; kept across notes
   braids::MacroOscillator osc;
 };
 struct Shared {

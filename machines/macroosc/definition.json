@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "macroosc",
   "name": "Macro Osc",
+  "press": "page",
   "parameters": [
     {
       "id": "model",
@@ -117,6 +118,42 @@
         "maximum": 1
       },
       "display": "percent"
+    },
+    {
+      "id": "bits",
+      "label": "Bits",
+      "control": 0,
+      "default": 1,
+      "mapping": {
+        "kind": "linear",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "display": "percent"
+    },
+    {
+      "id": "rate",
+      "label": "Rate",
+      "control": 1,
+      "default": 1,
+      "mapping": {
+        "kind": "linear",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "display": "percent"
+    },
+    {
+      "id": "drift",
+      "label": "Drift",
+      "control": 2,
+      "default": 0,
+      "mapping": {
+        "kind": "linear",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "display": "percent"
     }
   ],
   "presets": {
@@ -125,29 +162,35 @@
       "timbre": 0.5,
       "color": 0.5,
       "fm_ratio": 0.125,
-      "fm_depth": 0
+      "fm_depth": 0,
+      "bits": 1,
+      "rate": 1,
+      "drift": 0
     },
     "Pluck": {
       "model": 0.6063829787234043,
       "timbre": 0.5,
       "color": 0.5,
       "fm_ratio": 0.125,
-      "fm_depth": 0
+      "fm_depth": 0,
+      "bits": 1,
+      "rate": 1,
+      "drift": 0
     }
   },
   "resources": {
-    "voiceBytes": 632,
+    "voiceBytes": 644,
     "voiceAlignment": 4,
     "voiceCapacity": 128,
     "sharedBytes": 131332,
     "outputPeakQ31": 488570880,
     "display": {
-      "stateBytes": 4,
+      "stateBytes": 16,
       "stateAlignment": 4,
       "paths": 0,
       "points": 0,
       "nodes": 228,
-      "texts": 0,
+      "texts": 8,
       "palette": 8
     }
   }
