@@ -3,6 +3,7 @@
 // DSP stays independently pinned.
 #include "core.h"
 #include "fm.h"
+#include "lofi.h"
 #include "pitch.h"
 #include "stmlib/utils/dsp.h"
 #include "stmlib/utils/random.h"
@@ -98,6 +99,36 @@ void start(Voice& voice, Shared&, opxy::u32) {
 inline int32_t ClampPitch(int32_t pitch) {
   return pitch < 0 ? 0 : pitch > 16383 ? 16383 : pitch;
 }
+
+// Bits and Rate, as the module applies them to its rendered block: every
+// `step` (Q16) of a sample, hold the next sample with its low bits cleared.
+// At 16 bits and every sample the block is left as it is.
+inline void Reduce(Voice& voice, int16_t* block, size_t size, int16_t mask, uint32_t step) {
+  if (mask == -1 && step == 65536) {
+    return;
+  }
+  for (size_t i = 0; i < size; ++i) {
+    voice.hold_phase += step;
+    if (voice.hold_phase >= 65536) {
+      voice.hold_phase -= 65536;
+      voice.held = block[i] & mask;
+    }
+    block[i] = static_cast<int16_t>(voice.held);
+  }
+}
+
+// Drift: once per block, the walk takes a random step and leaks back toward
+// the note over about 1.5 seconds; the amount scales how far it moves the
+// pitch. Draws from the voice's random sequence only while Drift is up.
+inline int32_t Drift(Voice& voice, uint32_t amount) {
+  if (amount == 0) {
+    return 0;
+  }
+  int32_t walk = voice.drift_walk + (stmlib::Random::GetSample() >> 6);
+  walk -= walk >> 10;
+  voice.drift_walk = walk < -32767 ? -32767 : walk > 32767 ? 32767 : walk;
+  return ((voice.drift_walk >> 8) * static_cast<int32_t>(amount >> 7) * kDriftUnits) >> 15;
+}
 void render(Voice& voice, Shared& state, opxy::u32 owner, opxy::Output out,
             opxy::Parameters parameters, opxy::Pitch pitch_increments) {
   MacroOscillator* osc = &voice.osc;
@@ -131,12 +162,16 @@ void render(Voice& voice, Shared& state, opxy::u32 owner, opxy::Output out,
 
   osc->set_delay_lines(state.delays.get(owner, voice.delay_slot));
   stmlib::Random::Seed(voice.rng_state);
+  const int16_t mask = BitMask(BitsFromParameter(parameters[5]));
+  const uint32_t step = RateStepQ16(parameters[6]);
+  const int32_t drift = Drift(voice, Unipolar15(parameters[7]));
   int16_t block[kMaxChunk];
   if (depth == 0) {
     for (size_t offset = 0; offset < kBlockSize; offset += kMaxChunk) {
       size_t size = kBlockSize - offset < kMaxChunk ? kBlockSize - offset : kMaxChunk;
-      osc->set_pitch(ClampPitch(PitchFromIncrement(pitch_increments[offset])));
+      osc->set_pitch(ClampPitch(PitchFromIncrement(pitch_increments[offset]) + drift));
       osc->Render(kNoSync, block, size);
+      Reduce(voice, block, size, mask, step);
       for (size_t i = 0; i < size; ++i) {
         out[offset + i] = static_cast<int32_t>(block[i]) * kOutputLevel;
       }
@@ -152,8 +187,9 @@ void render(Voice& voice, Shared& state, opxy::u32 owner, opxy::Output out,
       const int32_t swing = (static_cast<int32_t>(depth) * stmlib::Interpolate824(braids::wav_sine, voice.fm_phase)) >> 15;
       const uint32_t carrier = increment + static_cast<uint32_t>(static_cast<int32_t>(increment >> 15) * swing);
       voice.fm_phase += RatioIncrement(increment, ratio) * static_cast<uint32_t>(size);
-      osc->set_pitch(ClampPitch(PitchFromIncrement(carrier)));
+      osc->set_pitch(ClampPitch(PitchFromIncrement(carrier) + drift));
       osc->Render(kNoSync, block, size);
+      Reduce(voice, block, size, mask, step);
       for (size_t i = 0; i < size; ++i) {
         out[offset + i] = static_cast<int32_t>(block[i]) * kOutputLevel;
       }
