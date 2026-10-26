@@ -1,14 +1,14 @@
 <g id="macroosc_panel">
     <rect x="0" y="25" width="480" height="195" fill="#000000"/>
-    <!-- The page not in the header: titles, then values the display scales to 0.65. -->
-    <text id="macroosc_text_0" transform="matrix(1 0 0 1 5 34)" fill="#5A5A5A" font-family="UniversNextPro-Light" font-size="10px">bits</text>
-    <text id="macroosc_text_1" transform="matrix(1 0 0 1 125 34)" fill="#5A5A5A" font-family="UniversNextPro-Light" font-size="10px">rate</text>
-    <text id="macroosc_text_2" transform="matrix(1 0 0 1 245 34)" fill="#5A5A5A" font-family="UniversNextPro-Light" font-size="10px">drift</text>
-    <text id="macroosc_text_3" transform="matrix(1 0 0 1 365 34)" fill="#5A5A5A" font-family="UniversNextPro-Light" font-size="10px">fm depth</text>
-    <text id="macroosc_text_4" transform="matrix(1 0 0 1 65 34)" fill="#707070" font-family="UniversNextPro-Light" font-size="20px">16</text>
-    <text id="macroosc_text_5" transform="matrix(1 0 0 1 185 34)" fill="#707070" font-family="UniversNextPro-Light" font-size="20px">44k</text>
-    <text id="macroosc_text_6" transform="matrix(1 0 0 1 305 34)" fill="#707070" font-family="UniversNextPro-Light" font-size="20px">0</text>
-    <text id="macroosc_text_7" transform="matrix(1 0 0 1 425 34)" fill="#707070" font-family="UniversNextPro-Light" font-size="20px">0</text>
+    <!-- The page not in the header: its titles, then its values. -->
+    <text id="macroosc_text_0" transform="matrix(1 0 0 1 5 33)" fill="#5A5A5A" font-family="UniversNextPro-Light" font-size="10px">bits</text>
+    <text id="macroosc_text_1" transform="matrix(1 0 0 1 125 33)" fill="#5A5A5A" font-family="UniversNextPro-Light" font-size="10px">rate</text>
+    <text id="macroosc_text_2" transform="matrix(1 0 0 1 245 33)" fill="#5A5A5A" font-family="UniversNextPro-Light" font-size="10px">drift</text>
+    <text id="macroosc_text_3" transform="matrix(1 0 0 1 365 33)" fill="#5A5A5A" font-family="UniversNextPro-Light" font-size="10px">fm depth</text>
+    <text id="macroosc_text_4" transform="matrix(1 0 0 1 65 33)" fill="#707070" font-family="UniversNextPro-Light" font-size="13px">16</text>
+    <text id="macroosc_text_5" transform="matrix(1 0 0 1 185 33)" fill="#707070" font-family="UniversNextPro-Light" font-size="13px">44k</text>
+    <text id="macroosc_text_6" transform="matrix(1 0 0 1 305 33)" fill="#707070" font-family="UniversNextPro-Light" font-size="13px">0</text>
+    <text id="macroosc_text_7" transform="matrix(1 0 0 1 425 33)" fill="#707070" font-family="UniversNextPro-Light" font-size="13px">0</text>
     <rect x="368" y="146" width="5" height="6" fill="#565656"/>
     <rect x="368" y="136" width="5" height="6" fill="#565656"/>
     <rect x="368" y="124" width="5" height="6" fill="#565656"/>

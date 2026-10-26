@@ -22,9 +22,10 @@ const unsigned kPages[2][4] = {{kModelSlot, kTimbreSlot, kColorSlot, kRatioSlot}
 // Each slot's title as the stock header writes it.
 const char* const kTitles[8] = {"model", "timbre", "color", "fm ratio", "fm depth", "bits", "rate", "drift"};
 // Header (stock) and page row positions, Q10 pixels: titles at each column's
-// left, values 65 pixels in; the row's values are the header's at 0.65 scale.
+// left, values 65 pixels in. The row's values are authored at 13 px, so they
+// rest at unit scale and start a slide at the header's 20 px.
 const opxy::i32 kColumn = 120 << 10, kTitleX = 5 << 10, kValueX = 65 << 10;
-const opxy::i32 kHeaderTitleY = 10 << 10, kHeaderValueY = 17818, kRowY = 34 << 10, kRowValueScale = 666;
+const opxy::i32 kHeaderTitleY = 10 << 10, kHeaderValueY = 17818, kRowY = 33 << 10, kHeaderValueScale = 1575;
 // A switch slides the page leaving the header down into the row, its values
 // shrinking, on an exponential ease-out: the distance left halves every 21 ms,
 // so it is within 1% after 0.15 s, when it settles.
@@ -125,7 +126,7 @@ inline void display(DisplayState& state, const opxy::draw::Input& input, Frame& 
     char value[opxy::draw::header_capacity];
     caption(value, sizeof(value), slot, input, index);
     opxy::draw::text(frame, kValueText + i, x + kValueX, between(kRowY, kHeaderValueY, left),
-                     between(kRowValueScale, opxy::draw::unit, left), value);
+                     between(opxy::draw::unit, kHeaderValueScale, left), value);
   }
   // Knobs: Timbre and Color along the bottom; on the right, the linked pair
   // the fourth encoder switches between, each showing its own parameter: FM

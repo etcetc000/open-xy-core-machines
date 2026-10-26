@@ -123,7 +123,7 @@
       "id": "bits",
       "label": "Bits",
       "control": 0,
-      "default": 0,
+      "default": 1,
       "mapping": {
         "kind": "linear",
         "minimum": 0,
@@ -135,7 +135,7 @@
       "id": "rate",
       "label": "Rate",
       "control": 1,
-      "default": 0,
+      "default": 1,
       "mapping": {
         "kind": "linear",
         "minimum": 0,
@@ -163,8 +163,8 @@
       "color": 0.5,
       "fm_ratio": 0.125,
       "fm_depth": 0,
-      "bits": 0,
-      "rate": 0,
+      "bits": 1,
+      "rate": 1,
       "drift": 0
     },
     "Pluck": {
@@ -173,8 +173,8 @@
       "color": 0.5,
       "fm_ratio": 0.125,
       "fm_depth": 0,
-      "bits": 0,
-      "rate": 0,
+      "bits": 1,
+      "rate": 1,
       "drift": 0
     }
   },

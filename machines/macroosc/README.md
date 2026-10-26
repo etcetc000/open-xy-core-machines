@@ -13,15 +13,16 @@ the carrier between zero and twice the note, except where that would silence a
 model: blown, bowed and fluted sustain a pitch-tuned delay line, so full depth
 swings them by a tenth, a twentieth and a fiftieth, and the snare by half. The complete
 model/code/label list is in [models.hpp](models.hpp). Bits, Rate and Drift are the module's
-own settings, applied to every voice before the OP-XY's filter: Bits clears
-low bits from 16 down to 2, Rate holds samples from 44.1 kHz down to 2.76 kHz
-(continuous, four octaves), and Drift wanders the pitch slowly, at most about
-a third of a semitone. At 0 each leaves the sound as it was, so sounds saved
-before page 2 existed play unchanged.
+own settings, applied to every voice before the OP-XY's filter: Bits keeps 2
+up to 16 bits and Rate holds samples at 2.76 kHz up to 44.1 kHz (continuous,
+four octaves); both count up as they turn and default to fully clean, 16 bits
+at 44.1 kHz. Drift wanders the pitch slowly, at most about a third of a
+semitone, and is clean at 0. Sounds saved before page 2 existed hold 0 for
+Bits and Rate, so they open fully crushed: turn both up to restore them.
 
 The screen's header shows the page the encoders edit; the grey row under it
 shows the other page. A press slides the page leaving the header down into
-that row, shrinking its values, on a 0.15-second exponential ease-out (none
+that row, shrinking its values from 20 to 13 pixels, on a 0.15-second exponential ease-out (none
 with reduced motion). Below, the model code glows on four 14-segment
 characters, with knobs for Timbre, Color and, joined on the right, FM Ratio
 and FM Depth; each knob always shows its own parameter. Timbre, Color, Drift
