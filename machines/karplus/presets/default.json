@@ -21,9 +21,9 @@
       }
     },
     "params": [
-      22937,
-      9830,
-      13107,
+      6553,
+      28835,
+      1638,
       0,
       0,
       0,
@@ -37,7 +37,7 @@
     "tuning.root": 0,
     "tuning.scale": 0,
     "velocity.sensitivity": 0,
-    "volume": 16384,
+    "volume": 13107,
     "width": 0
   },
   "envelope": {

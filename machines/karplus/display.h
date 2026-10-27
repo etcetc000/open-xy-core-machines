@@ -4,7 +4,7 @@
 namespace karplus {
 // Matches resources.display in definition.json: paths, points, nodes, texts, palette.
 // The string is four overlapping outlines (paths 0 to 3), then its two pegs,
-// the pick marker and four companion strings for Detune.
+// the pick marker and four companion strings for Spread.
 using Frame = opxy::draw::Frame<4, 64, 11, 0, 4>;
 // Each note's pluck: its waves' height, time since the note and pick point.
 const unsigned kPlucks = 12;

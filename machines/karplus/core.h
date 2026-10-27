@@ -10,7 +10,7 @@ struct String {
     opxy::i32 previous;       // the loop filter's last input
     opxy::i32 input, output;  // the fractional-delay allpass's last input and output
 };
-// Two strings, the second tuned apart by Detune; at Detune 0 they are one.
+// Two strings, the second tuned apart by Spread; at Spread 0 they are one.
 struct Voice {
     String strings[2];
     opxy::u32 write;    // next write position, shared by both lines

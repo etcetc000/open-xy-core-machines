@@ -84,7 +84,7 @@ int main() {
     static karplus::Voice voice;
     static opxy::i32 out[kBlocks * opxy::block_frames];
     const opxy::i32 kHalf = 0x40000000, kFull = 0x7fffffff;
-    // Bright, Pick, Damp, Detune.
+    // Bright, Pick, Damp, Spread.
     for (opxy::i32 damp : {0, kHalf, kFull}) {
         const opxy::i32 parameters[8] = {kHalf, kHalf / 2, damp, 0};
         for (double hz : {110.0, 220.0, 440.0, 880.0}) {
@@ -119,13 +119,13 @@ int main() {
     check("the middle sounds hollow", hollow < 0.05);
     check("the bridge keeps its even harmonics", full > 0.3);
     check("plucked at the bridge within the declared peak", bounded(out));
-    // Detune separates the two strings; without it they stay one.
+    // Spread separates the two strings; without it they stay one.
     const opxy::i32 single[8] = {kHalf, kHalf / 2, kHalf / 4, 0}, doubled[8] = {kHalf, kHalf / 2, kHalf / 4, kFull};
     play(voice, 220.0, single, out);
-    check("no Detune keeps one string", one_string(voice));
+    check("no Spread keeps one string", one_string(voice));
     play(voice, 220.0, doubled, out);
-    check("Detune separates the strings", !one_string(voice));
-    check("detuned within the declared peak", bounded(out));
+    check("Spread separates the strings", !one_string(voice));
+    check("spread within the declared peak", bounded(out));
     if (failures) std::printf("%d failures\n", failures);
     return failures ? 1 : 0;
 }

@@ -5,7 +5,7 @@
 // A plucked string (Karplus-Strong): a pluck circulates in a delay line one
 // period long, losing a little treble and energy every pass, and a pickup at
 // the pick point hears it. The OP-XY's own envelope and level shape the note;
-// the controls shape the string: Bright, Pick, Damp and Detune.
+// the controls shape the string: Bright, Pick, Damp and Spread.
 namespace karplus {
 namespace {
 using opxy::i32;
@@ -130,7 +130,7 @@ inline void initialize(Voice& voice, Shared&, u32 owner) {
 inline void start(Voice& voice, Shared&, u32) { voice.excited = 0; }
 inline void destroy(Voice&, Shared&, u32) {}
 
-// Controls: Bright, Pick, Damp, Detune.
+// Controls: Bright, Pick, Damp, Spread.
 inline void render(Voice& voice, Shared&, u32, opxy::Output output, opxy::Parameters parameters,
                    opxy::Pitch pitch) {
     const u32 period = period_q8(pitch[0]);
@@ -144,7 +144,7 @@ inline void render(Voice& voice, Shared&, u32, opxy::Output output, opxy::Parame
     // sample, which the delay line gives back to keep the string in tune.
     const i32 damp = weight(parameters[2], 655, 32768);
     const u32 tuned = period - static_cast<u32>(damp >> 8);
-    // Detune: the second string up to about 25 cents flat (1.45%, Q16 950).
+    // Spread: the second string up to about 25 cents flat (1.45%, Q16 950).
     const u32 apart = static_cast<u32>(weight(parameters[3], 0, 950));
     u32 second = tuned + ((tuned >> 6) * apart >> 10);
     if (second > (kLength - 4) << 8) second = (kLength - 4) << 8;

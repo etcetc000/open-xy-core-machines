@@ -6,7 +6,7 @@
     {
       "id": "bright",
       "label": "Bright",
-      "default": 0.7,
+      "default": 0.2,
       "mapping": {
         "kind": "linear",
         "minimum": 0,
@@ -17,7 +17,7 @@
     {
       "id": "pick",
       "label": "Pick",
-      "default": 0.3,
+      "default": 0.88,
       "mapping": {
         "kind": "linear",
         "minimum": 0.05,
@@ -28,7 +28,7 @@
     {
       "id": "damp",
       "label": "Damp",
-      "default": 0.4,
+      "default": 0.05,
       "mapping": {
         "kind": "linear",
         "minimum": 0,
@@ -37,8 +37,8 @@
       "display": "percent"
     },
     {
-      "id": "detune",
-      "label": "Detune",
+      "id": "spread",
+      "label": "Spread",
       "default": 0,
       "mapping": {
         "kind": "linear",
@@ -53,25 +53,25 @@
       "bright": 0.45,
       "pick": 0.35,
       "damp": 0.6,
-      "detune": 0
+      "spread": 0
     },
     "Steel": {
       "bright": 0.95,
       "pick": 0.12,
       "damp": 0.15,
-      "detune": 0
+      "spread": 0
     },
     "Twelve": {
       "bright": 0.85,
       "pick": 0.2,
       "damp": 0.3,
-      "detune": 0.35
+      "spread": 0.35
     },
     "Felt": {
       "bright": 0.3,
       "pick": 0.5,
       "damp": 1,
-      "detune": 0.1
+      "spread": 0.1
     }
   },
   "resources": {

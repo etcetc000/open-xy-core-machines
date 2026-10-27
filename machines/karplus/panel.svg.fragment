@@ -1,5 +1,5 @@
 <g id="karplus_panel">
-  <!-- Companion strings for Detune, behind the string: lighter near it, darker further out.
+  <!-- Companion strings for Spread, behind the string: lighter near it, darker further out.
        They start parked below the screen, where no end reaches back onto it. -->
   <path id="karplus_node_7" transform="matrix(1 0 0 1 640 320)" d="M-190 0 L190 0" fill="none" stroke="#9A9A9A" stroke-width="1"/>
   <path id="karplus_node_8" transform="matrix(1 0 0 1 640 320)" d="M-190 0 L190 0" fill="none" stroke="#555555" stroke-width="1"/>

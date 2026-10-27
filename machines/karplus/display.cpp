@@ -5,7 +5,7 @@
 // the Pick position; the waves bounce off the pegs, which hold still, inverting
 // as on a real string, and fade faster the more the string is damped. The
 // waves of up to kPlucks notes ring at once and add up. Bright sets their
-// height, and Detune spreads faint companion strings above and below. Display
+// height, and Spread fans out faint companion strings above and below. Display
 // code only: no audio state.
 namespace karplus {
 namespace {
@@ -74,7 +74,7 @@ inline void display(DisplayState& state, const Input& input, Frame& frame) {
     const i32 elapsed = clamp(input.elapsed, 0, 205);  // at most 0.2 s per frame
     const i32 bright = fraction(input.parameters[0]);
     const i32 at = static_cast<i32>(along(kPickPositions, input.parameters[1]) >> 5);  // the pick point, 0..512 of 1024
-    const i32 damp = fraction(input.parameters[2]), detune = fraction(input.parameters[3]);
+    const i32 damp = fraction(input.parameters[2]), spread = fraction(input.parameters[3]);
     const i32 pick = at * kLength;  // Q10 pixels from the left peg
     // Whether the string was off rest: a frame that brings it to rest, by a reset
     // or a fade, still draws it at rest.
@@ -139,12 +139,12 @@ inline void display(DisplayState& state, const Input& input, Frame& frame) {
     place(frame, kPeg, kLeft * unit, kY * unit, unit, 1, fill_and_stroke);
     place(frame, kPeg + 1, kRight * unit, kY * unit, unit, 1, fill_and_stroke);
     place(frame, kMarker, kLeft * unit + pick, (kY + 34) * unit, unit, 1, fill_and_stroke);
-    // Companion strings, spread evenly by Detune up to 20 pixels apart: the
+    // Companion strings, evenly up to 20 pixels apart as Spread rises: the
     // inner pair lighter (palette 2), the outer pair darker (palette 3).
     for (u32 c = 0; c < kCompanions; ++c) {
         const i32 step = c < 2 ? static_cast<i32>(c) + 1 : 1 - static_cast<i32>(c);  // +1, +2, -1, -2
-        if (detune)
-            place(frame, kCompanion + c, (kLeft + kLength / 2) * unit, kY * unit + step * detune * 20, unit,
+        if (spread)
+            place(frame, kCompanion + c, (kLeft + kLength / 2) * unit, kY * unit + step * spread * 20, unit,
                   step == 1 || step == -1 ? 2 : 3, stroke);
         else
             // Below the screen: hide() parks at x 640, from which a 380-pixel
