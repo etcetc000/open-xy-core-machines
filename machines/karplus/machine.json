@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "sdk": "1.0",
+  "sdk": "1.3",
   "kind": "synth",
   "description": "A plucked string: a pick excites a tuned delay line that rings and fades.",
   "identity": {
@@ -11,5 +11,6 @@
     "amp": {
       "release": 16384
     }
-  }
+  },
+  "presets": "presets"
 }

@@ -1,0 +1,91 @@
+{
+  "engine": {
+    "bendrange": 8191,
+    "detune": 0,
+    "highpass": 0,
+    "modulation": {
+      "aftertouch": {
+        "amount": 16384,
+        "target": 0
+      },
+      "modwheel": {
+        "amount": 16384,
+        "target": 0
+      },
+      "pitchbend": {
+        "amount": 16384,
+        "target": 0
+      },
+      "velocity": {
+        "amount": 16384,
+        "target": 0
+      }
+    },
+    "params": [
+      8629,
+      13987,
+      31214,
+      17566,
+      0,
+      0,
+      0,
+      0
+    ],
+    "playmode": "poly",
+    "portamento.amount": 1427,
+    "portamento.type": 0,
+    "transpose": 0,
+    "tuning.root": 0,
+    "tuning.scale": 0,
+    "velocity.sensitivity": 0,
+    "volume": 16384,
+    "width": 0
+  },
+  "envelope": {
+    "amp": {
+      "attack": 1195,
+      "decay": 9348,
+      "release": 4191,
+      "sustain": 28616
+    },
+    "filter": {
+      "attack": 27508,
+      "decay": 30023,
+      "release": 18351,
+      "sustain": 11989
+    }
+  },
+  "fx": {
+    "active": false,
+    "params": [
+      32417,
+      27393,
+      30549,
+      18328,
+      0,
+      32767,
+      0,
+      0
+    ],
+    "type": "svf"
+  },
+  "lfo": {
+    "active": false,
+    "params": [
+      25031,
+      25759,
+      24001,
+      19857,
+      24985,
+      29066,
+      28820,
+      29962
+    ],
+    "type": "value"
+  },
+  "octave": 0,
+  "platform": "OP-XY",
+  "regions": [],
+  "type": "karplus",
+  "version": 4
+}
