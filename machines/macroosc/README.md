@@ -20,9 +20,10 @@ at 44.1 kHz. Drift wanders the pitch slowly, at most about a third of a
 semitone, and is clean at 0. Sounds saved before page 2 existed hold 0 for
 Bits and Rate, so they open fully crushed: turn both up to restore them.
 
-The screen's header shows the page the encoders edit; the grey row under it
-shows the other page. A press slides the page leaving the header down into
-that row, shrinking its values from 20 to 13 pixels, on a 0.15-second exponential ease-out (none
+The screen's header shows both pages, page 1 on top and page 2 under it. The
+page the encoders edit is full size on the stepped grey bar; the other is a
+smaller grey row. A press grows one row and shrinks the other in place,
+values between 20 and 13 pixels, on a 0.15-second exponential ease-out (none
 with reduced motion). Below, the model code glows on four 14-segment
 characters, with knobs for Timbre, Color and, joined on the right, FM Ratio
 and FM Depth; each knob always shows its own parameter. Timbre, Color, Drift
