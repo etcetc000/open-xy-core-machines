@@ -29,7 +29,7 @@ fans out companion strings above and below, darker the further out they are.
 | File | Owns |
 | --- | --- |
 | [definition.json](definition.json), [machine.json](machine.json) | Controls, presets, resources, SDK version and identity |
-| [presets](presets) | The device presets the builder installs in `content/presets/karplus/`: `default.json`, the starting sound, plus `harp.json` and `pluck.json` |
+| [presets](presets) | The device presets the builder installs in `content/presets/karplus/`: `default.json`, the starting sound, plus `harp.json` and `chorus.json` |
 | [core.h](core.h), [engine.cpp](engine.cpp) | Voice state and sound |
 | [display.h](display.h), [display.cpp](display.cpp), [panel.svg.fragment](panel.svg.fragment) | The screen |
 | [pick.h](pick.h) | Pick's sweep and the pickup's level, shared by the sound and the screen |
