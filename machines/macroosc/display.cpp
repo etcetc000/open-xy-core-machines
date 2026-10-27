@@ -135,6 +135,9 @@ inline void display(DisplayState& state, const opxy::draw::Input& input, Frame& 
   for (unsigned i = 0; i < kBarSteps; ++i)
     opxy::draw::place(frame, kBarNode + i, i * kBarStep, between(edited, from, left), opxy::draw::unit, 0,
                       opxy::draw::keep);
+  // The stock header's values too: covered on the device, shown by previews
+  // that draw the stock header over the artwork.
+  for (unsigned i = 0; i < 4; ++i) caption(frame.header[i], sizeof(frame.header[i]), input.shown[i], input, index);
   for (unsigned row = 0; row < 2; ++row) {
     const bool growing = row == page;
     const opxy::i32 title_y = growing ? between(edited + kTitleY, was + kGreyY, left)
