@@ -53,19 +53,21 @@ public:
     bool note_on(i32 position, u32 pitch, u32 velocity, u32 radius = 0) {
         if (!playing_ || pitch > 127 || velocity > 127) return false;
         note_off(pitch);
-        // Stock rejects a full container before attempting collision pruning.
+        if (!velocity) return false;
         // The take is the last pattern length of playing, ending at the newest
-        // onset: a note a full loop older is dropped, so an earlier pass never
-        // lands on the same steps as the one that replaced it.
-        const Ticks window = static_cast<Ticks>(context_.length) << 8;
+        // onset, so an earlier pass never shares steps with the one replacing
+        // it. A note from about one loop ago, within the collision radius, is
+        // the previous pass on this step even if timing drifted. Held notes stay.
+        const u32 slack = radius < context_.length / 2 ? radius : context_.length / 2;
+        const Ticks window = static_cast<Ticks>(context_.length - slack) << 8;
         u32 recent = 0;
         for (u32 i = 0; i < count_; ++i) {
             const Entry& old = entries_[i];
-            if (elapsed_ - old.onset < window) entries_[recent++] = old;
-            else if (old.held) --held_;
+            if (old.held || elapsed_ - old.onset < window) entries_[recent++] = old;
         }
         count_ = recent;
-        if (!velocity || held_ == held_capacity || count_ == capacity) return false;
+        // Stock rejects a full container before attempting collision pruning.
+        if (held_ == held_capacity || count_ == capacity) return false;
         u32 kept = 0;
         for (u32 i = 0; i < count_; ++i) {
             const Entry& old = entries_[i];

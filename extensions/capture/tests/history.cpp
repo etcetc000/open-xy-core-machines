@@ -102,6 +102,20 @@ int main() {
     CHECK(h.snapshot(notes, 120) == 16);
     for (u32 i = 0; i < 12; ++i) CHECK(notes[i].pitch == 52 + i);
     for (u32 i = 0; i < 4; ++i) CHECK(notes[12 + i].pitch == 72 + i);
+    // Timing drift: the previous pass's note on a step, played later in its
+    // loop than the retry, is still replaced within the collision radius.
+    h.clear();
+    CHECK(h.note_on(4 * 480, 60, 80, 180)); h.note_off(60);
+    h.advance(16 * step - 10 * 256);
+    CHECK(h.note_on(4 * 480, 64, 90, 180)); h.note_off(64);
+    CHECK(h.snapshot(notes, 120) == 1 && notes[0].pitch == 64);
+    // A note held across the loop point stays while it is held.
+    h.clear();
+    CHECK(h.note_on(0, 36, 80, 180));
+    h.advance(20 * step);
+    CHECK(h.note_on(4 * 480, 64, 90, 180)); h.note_off(64);
+    h.note_off(36);
+    CHECK(h.snapshot(notes, 120) == 2 && notes[0].pitch == 36 && notes[0].length == 16 * 480);
     // Silence, then a single note: a take never spans more than one loop.
     h.advance(3 * 16 * step);
     CHECK(h.note_on(0, 100, 90)); h.note_off(100);
