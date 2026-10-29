@@ -4,6 +4,9 @@ Timestretch plays samples in time with the project, either by repitching or
 with pitch-preserving, Capicola-derived timestretch. It forks the
 stock drum sampler (`"base": "drumSampler"`): each pad has its own sample and settings.
 
+Requires SDK 1.6 or later for saved BPM/bar memory and pad editing. New saved
+settings cannot be read by firmware built with an older SDK.
+
 ## Playing it
 
 | Encoder | Main page | Shift |
@@ -16,8 +19,9 @@ stock drum sampler (`"base": "drumSampler"`): each pad has its own sample and se
 - **Length and tempo.** Lengths are 1/4, 1/2, 1, 2, 4 and 8 bars of 4/4.
   Source BPM runs from 20.0 to 300.0. Shift + turn encoder 2 changes it by
   0.1 BPM; hold that encoder down while turning for 1 BPM. A turn suppresses
-  the release's mode-switch click. Switching from bars to BPM starts
-  at 120; switching back starts at one bar. Set the length or source BPM
+  the release's mode-switch click. Each pad remembers both its bar length and
+  source BPM when switching between them, including after saving a project.
+  A pad with no previous BPM starts at 120. Set the length or source BPM
   correctly before judging stretch quality.
 - **Automatic source BPM.** Put exactly three digits at the start or end of
   the file name, separated by a space, `_` or `-`: `095_guitar.wav` or
@@ -34,6 +38,19 @@ stock drum sampler (`"base": "drumSampler"`): each pad has its own sample and se
 - **Trim.** Playback follows the outer start/end markers, which new
   assignments set to the whole sample; the sampler's hidden loop markers do
   not apply.
+- **Slice and copy pads.** Hold a musical key and press M1 for the stock
+  slicer (transient, even or tap), M2 to copy that pad, or M3 to paste onto
+  the held key. Slices inherit the source pad's loop/play, mode and
+  BPM-or-length setting. With a bar length, each slice plays for that length;
+  use source BPM to keep slices at the source tempo. Copy/paste within
+  Timestretch also preserves trim, tuning, reverse and volume. Pasting from
+  another engine uses Timestretch's default loop/play, mode and length;
+  pasting into a stock sampler clears Timestretch's private settings.
+- **Edit multiple.** Hold a musical key and press M4, then select the pads to
+  edit. Pitch, loop/play, source BPM or length, and repitch/timestretch use the
+  same controls as single-pad editing, including encoder clicks. Each selected
+  pad keeps its own base values and receives the adjustment; the displayed
+  selected pad updates with its saved settings.
 - **Pitch.** Pad pitch, live pitch (another ±12 semitones), the octave
   buttons and the track transpose (±36) add up, limited to ±60 semitones. In
   timestretch mode pitch is independent of loop speed; in repitch mode it
@@ -60,7 +77,7 @@ declares stereo output, same-key choke, pad settings with drum controls, and a
 2 MiB analysis budget.
 
 - [`controls.h`](controls.h) packs loop/play, mode and BPM-or-length into the
-  16-bit pad settings, and implements `sample_defaults`, `sample_assign`,
+  pad settings, and implements `sample_defaults`, `sample_assign`,
   `drum_control` and `drum_panel`. [`assignment.h`](assignment.h) reads the
   file-name BPM and suggests a length.
 - [`analysis.h`](analysis.h) prepares a keyframe bitmap per channel: positions

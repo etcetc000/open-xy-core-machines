@@ -5,7 +5,12 @@
 
 namespace timestretch {
 // Pad settings (opxy::PadSettings): the SDK owns serialization and stock layouts.
-struct Controls { bool once; bool stretch; opxy::u32 bpm_x10; opxy::u32 length; };
+struct Controls {
+    bool once; bool stretch;
+    opxy::u32 bpm_x10; // zero selects bars
+    opxy::u32 length;
+    opxy::u32 remembered_bpm_x10;
+};
 // Stock's live controls are bipolar around Q31 half-scale. The saved pad
 // settings remain the base; the middle third of a mode control inherits it.
 inline opxy::u32 live_parameter(const opxy::i32* live, unsigned index) {
@@ -21,16 +26,27 @@ inline bool live_mode(opxy::u32 value, bool saved) {
 }
 struct EffectiveControls { Controls pad; int pitch_cents; };
 inline Controls decode_controls(opxy::PadSettings value) {
-    // Two tag bits, two flags and twelve tempo bits. An untagged word is a pad
-    // without saved settings: loop, repitch, one bar.
-    if ((value & 3u) != 1u) return Controls{false, false, 0, 2};
+    // The extended format retains both controls and the selected unit. Old
+    // projects retain their active value; their previously discarded value
+    // starts at the original default.
+    if (value >= 65536u && value < 65536u + 2801u * 6u * 8u) {
+        const opxy::u32 packed = value - 65536u;
+        const opxy::u32 tempo = packed / 48u + 200u;
+        return Controls{(packed & 1u) != 0, (packed & 2u) != 0,
+                        (packed & 4u) ? tempo : 0, (packed / 8u) % 6u, tempo};
+    }
+    if (value > 65535u || (value & 3u) != 1u) return Controls{false, false, 0, 2, 1200};
     const opxy::u32 tempo = value >> 4;
+    const opxy::u32 bpm = tempo >= 6 && tempo <= 2806 ? tempo + 194 : 0;
     return Controls{(value & 4) != 0, (value & 8) != 0,
-                    tempo >= 6 && tempo <= 2806 ? tempo + 194 : 0, tempo < 6 ? tempo : 2};
+                    bpm, tempo < 6 ? tempo : 2, bpm ? bpm : 1200};
 }
 inline opxy::PadSettings encode_controls(const Controls& c) {
-    return static_cast<opxy::PadSettings>(1u | (c.once ? 4u : 0) | (c.stretch ? 8u : 0) |
-                                          ((c.bpm_x10 ? c.bpm_x10 - 194u : c.length) << 4));
+    opxy::u32 bpm = c.bpm_x10 ? c.bpm_x10 : c.remembered_bpm_x10;
+    if (bpm < 200 || bpm > 3000) bpm = 1200;
+    const opxy::u32 length = c.length < 6 ? c.length : 2;
+    return 65536u + (bpm - 200u) * 48u + length * 8u +
+           (c.bpm_x10 ? 4u : 0u) + (c.stretch ? 2u : 0u) + (c.once ? 1u : 0u);
 }
 inline EffectiveControls effective_controls(opxy::PadSettings value, const opxy::i32* live) {
     Controls c = decode_controls(value);
@@ -66,11 +82,11 @@ inline opxy::u32 live_marker(opxy::u32 marker, opxy::u32 frames, opxy::u32 value
 }
 // A pad without saved settings: loop, repitch, one bar.
 inline opxy::PadSettings sample_defaults() {
-    return encode_controls(Controls{false, false, 0, 2});
+    return encode_controls(Controls{false, false, 0, 2, 1200});
 }
 inline opxy::PadSettings sample_assign(const opxy::SampleAssignment& input) {
     Controls c = input.replacing ? decode_controls(input.previous) :
-        Controls{false, false, 0, suggested_length(input.frames, input.rate, input.bpm_x10)};
+        Controls{false, false, 0, suggested_length(input.frames, input.rate, input.bpm_x10), 1200};
     // A recording plays at the project tempo it was recorded at (tenths BPM);
     // a file may name its tempo.
     const opxy::u32 tempo = input.bpm_x10;
@@ -86,7 +102,10 @@ inline void drum_control(opxy::PadSettings& value, const opxy::DrumControl& even
         if (event.pressed) c.once = !c.once;
         else if (delta) c.once = delta > 0;
     } else if (event.shifted && event.knob == 1) {
-        if (event.pressed) c.bpm_x10 = c.bpm_x10 ? 0 : 1200;
+        if (event.pressed) {
+            if (c.bpm_x10) { c.remembered_bpm_x10 = c.bpm_x10; c.bpm_x10 = 0; }
+            else c.bpm_x10 = c.remembered_bpm_x10;
+        }
         else if (c.bpm_x10) {
             int bpm = int(c.bpm_x10) + delta * (event.held ? 10 : 1);
             c.bpm_x10 = bpm < 200 ? 200 : bpm > 3000 ? 3000 : opxy::u32(bpm);

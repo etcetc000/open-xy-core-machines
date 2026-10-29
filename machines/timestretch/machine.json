@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "sdk": "1.5",
+  "sdk": "1.6",
   "kind": "sample",
   "description": "Tempo-locked loops with cached pitch-preserving stretch and drum-pad controls.",
   "base": "drumSampler",
