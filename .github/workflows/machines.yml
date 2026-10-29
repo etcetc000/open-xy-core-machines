@@ -3,7 +3,10 @@ name: Machine checks
 # targets: its records and sources, a browser preview of each synth, its own host
 # tests, and a firmware compile with the pinned Blackfin tools. No stock files or device.
 on:
+  # A branch is checked once, by its pull request; pushes check main and release tags.
   push:
+    branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 permissions:
@@ -44,9 +47,14 @@ jobs:
           for record in machines/machine.json machines/machines/*/machine.json; do
             [ -f "$record" ] && args+=(--machine "$(dirname "$record")")
           done
-          for record in machines/extensions/*/extension.json; do
-            [ -f "$record" ] && args+=(--extension "$(dirname "$record")")
-          done
+          # Extensions are checked once the SDK on OPEN_XY_REF accepts them (sdk.py --extension).
+          if python open-xy/sdk.py test --help | grep -q -- --extension; then
+            for record in machines/extensions/*/extension.json; do
+              [ -f "$record" ] && args+=(--extension "$(dirname "$record")")
+            done
+          elif compgen -G 'machines/extensions/*/extension.json' >/dev/null; then
+            echo "::notice::The SDK on $OPEN_XY_REF does not check extensions yet; checking machines only."
+          fi
           python open-xy/sdk.py test "${args[@]}" --cxx clang++ --host-cxx g++
   firmware:
     # The pinned Blackfin tools run on Windows x86_64 and macOS arm64.
@@ -72,7 +80,12 @@ jobs:
           for record in machines/machine.json machines/machines/*/machine.json; do
             [ -f "$record" ] && args+=(--machine "$(dirname "$record")")
           done
-          for record in machines/extensions/*/extension.json; do
-            [ -f "$record" ] && args+=(--extension "$(dirname "$record")")
-          done
+          # Extensions are checked once the SDK on OPEN_XY_REF accepts them (sdk.py --extension).
+          if python open-xy/sdk.py compile --help | grep -q -- --extension; then
+            for record in machines/extensions/*/extension.json; do
+              [ -f "$record" ] && args+=(--extension "$(dirname "$record")")
+            done
+          elif compgen -G 'machines/extensions/*/extension.json' >/dev/null; then
+            echo "::notice::The SDK on $OPEN_XY_REF does not check extensions yet; checking machines only."
+          fi
           python open-xy/sdk.py compile "${args[@]}" --out "$RUNNER_TEMP/module"
