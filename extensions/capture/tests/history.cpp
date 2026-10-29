@@ -85,6 +85,100 @@ int main() {
     CHECK(h.note_on(1, 60, 99, 180)); h.note_off(60);
     CHECK(h.snapshot(notes, 120) == 2 && notes[0].pitch == 62 && notes[1].velocity == 99);
 
+    // A pass played again replaces the one before it: a take is the last
+    // pattern length of playing, so other pitches from the earlier pass do not
+    // stack on the same steps. One loop is 16 * 480 ticks.
+    c = context(); h.sync(c, true);
+    const u32 step = 480 * 256;
+    for (u32 i = 0; i < 16; ++i) { CHECK(h.note_on(i * 480, 48 + i, 80, 180)); h.advance(60 * 256); h.note_off(48 + i); h.advance(step - 60 * 256); }
+    for (u32 i = 0; i < 16; ++i) { CHECK(h.note_on(i * 480, 72 + i, 90, 180)); h.advance(60 * 256); h.note_off(72 + i); h.advance(step - 60 * 256); }
+    CHECK(h.snapshot(notes, 120) == 16);
+    for (u32 i = 0; i < 16; ++i) CHECK(notes[i].pitch == 72 + i && notes[i].position == static_cast<i32>(i * 480));
+    // A shorter retry keeps only the earlier pass's notes after the step
+    // where the retry stopped, never two notes from different passes on one step.
+    h.clear();
+    for (u32 i = 0; i < 16; ++i) { CHECK(h.note_on(i * 480, 48 + i, 80, 180)); h.note_off(48 + i); h.advance(step); }
+    for (u32 i = 0; i < 4; ++i) { CHECK(h.note_on(i * 480, 72 + i, 90, 180)); h.note_off(72 + i); h.advance(step); }
+    CHECK(h.snapshot(notes, 120) == 16);
+    for (u32 i = 0; i < 12; ++i) CHECK(notes[i].pitch == 52 + i);
+    for (u32 i = 0; i < 4; ++i) CHECK(notes[12 + i].pitch == 72 + i);
+    // Timing drift: the previous pass's note on a step, played later in its
+    // loop than the retry, is still replaced within the collision radius.
+    h.clear();
+    CHECK(h.note_on(4 * 480, 60, 80, 180)); h.note_off(60);
+    h.advance(16 * step - 10 * 256);
+    CHECK(h.note_on(4 * 480, 64, 90, 180)); h.note_off(64);
+    CHECK(h.snapshot(notes, 120) == 1 && notes[0].pitch == 64);
+    // A note held across the loop point stays while it is held.
+    h.clear();
+    CHECK(h.note_on(0, 36, 80, 180));
+    h.advance(20 * step);
+    CHECK(h.note_on(4 * 480, 64, 90, 180)); h.note_off(64);
+    h.note_off(36);
+    CHECK(h.snapshot(notes, 120) == 2 && notes[0].pitch == 36 && notes[0].length == 16 * 480);
+    // ...and for one loop after its release, like any note.
+    h.advance(8 * step);
+    CHECK(h.note_on(12 * 480, 65, 90, 180)); h.note_off(65);
+    CHECK(h.snapshot(notes, 120) == 3 && notes[0].pitch == 36);
+    h.advance(9 * step);
+    CHECK(h.note_on(5 * 480, 67, 90, 180)); h.note_off(67);
+    CHECK(h.snapshot(notes, 120) == 2 && notes[0].pitch == 65); // Then it ages out.
+    // A legato chord change: the held chord on step 0 gives way to the next
+    // pass's chord there, with no stacking, before or after its release.
+    h.clear();
+    for (u32 p = 60; p < 63; ++p) CHECK(h.note_on(0, p, 80, 180));
+    h.advance(16 * step + 20 * 256);
+    for (u32 p = 65; p < 68; ++p) CHECK(h.note_on(20, p, 90, 180));
+    CHECK(h.snapshot(notes, 120) == 3 && notes[0].pitch == 65);
+    for (u32 p = 60; p < 63; ++p) h.note_off(p);
+    for (u32 p = 65; p < 68; ++p) h.note_off(p);
+    h.advance(4 * step);
+    CHECK(h.note_on(4 * 480, 70, 90, 180)); h.note_off(70);
+    CHECK(h.snapshot(notes, 120) == 4 && notes[0].pitch == 65);
+    // A chord change almost half a step late, and across the wrap with a pickup
+    // before zero, still replaces the held note on its step.
+    h.clear();
+    CHECK(h.note_on(16 * 480 - 100, 60, 80, 180));
+    h.advance(16 * step + 120 * 256);
+    CHECK(h.note_on(-100 + 120 + 100, 65, 90, 180));
+    CHECK(h.snapshot(notes, 120) == 1 && notes[0].pitch == 65);
+    h.clear();
+    CHECK(h.note_on(-100, 60, 80, 180));
+    h.advance(16 * step - 90 * 256);
+    CHECK(h.note_on(16 * 480 - 190, 65, 90, 180));
+    CHECK(h.snapshot(notes, 120) == 1 && notes[0].pitch == 65);
+    h.note_off(65); h.clear();
+    // A deep pickup and a late note are measured around the loop, not matched
+    // outright: 280 ticks apart is more than half a step.
+    CHECK(h.note_on(-300, 60, 80, 180));
+    h.advance(16 * step);
+    CHECK(h.note_on(16 * 480 - 20, 65, 90, 180));
+    CHECK(h.snapshot(notes, 120) == 2);
+    h.note_off(60); h.note_off(65); h.clear();
+    CHECK(h.note_on(0, 60, 80, 180));
+    h.advance(16 * step + 230 * 256);
+    CHECK(h.note_on(230, 65, 90, 180));
+    CHECK(h.snapshot(notes, 120) == 1 && notes[0].pitch == 65);
+    h.note_off(65);
+    // The same step is half a step at every scale, even with no collision radius.
+    h.clear();
+    CHECK(h.note_on(0, 60, 80));
+    h.advance(16 * step + 200 * 256);
+    CHECK(h.note_on(200, 65, 90));
+    CHECK(h.snapshot(notes, 120) == 1 && notes[0].pitch == 65);
+    h.note_off(65);
+    // A short note from the previous pass does not linger past its loop.
+    h.clear();
+    CHECK(h.note_on(4 * 480, 50, 80, 180)); h.advance(2 * step); h.note_off(50);
+    h.advance(15 * step);
+    CHECK(h.note_on(5 * 480, 52, 90, 180)); h.note_off(52);
+    CHECK(h.snapshot(notes, 120) == 1 && notes[0].pitch == 52);
+    // Silence, then a single note: a take never spans more than one loop.
+    h.advance(3 * 16 * step);
+    CHECK(h.note_on(0, 100, 90)); h.note_off(100);
+    CHECK(h.snapshot(notes, 120) == 1 && notes[0].pitch == 100);
+    h.clear();
+
     // Repeated loops update the ghost pattern rather than fill a raw-onset FIFO.
     c = context(); h.sync(c, true);
     for (unsigned i = 0; i < 10000; ++i) {

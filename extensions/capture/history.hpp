@@ -8,11 +8,13 @@ namespace opxy { namespace extensions { namespace capture {
 // No quantization or conversion from wall-clock time belongs in this buffer.
 class RecordingHistory {
 public:
+    // Q8 pattern ticks since the take began; 64 bits so they never wrap.
+    using Ticks = __UINT64_TYPE__;
     // Stock's ordinary note container and active recording list limits.
     static const u32 capacity = 120;
     static const u32 held_capacity = 20;
     constexpr RecordingHistory() : context_{}, entries_{}, count_(0), held_(0),
-                                   playing_(false) {}
+                                   elapsed_(0), playing_(false) {}
 
     // length is in stock pattern ticks, not bars or elapsed milliseconds.
     // Stop freezes the partial pass; a subsequent start begins a new take.
@@ -31,10 +33,11 @@ public:
     }
 
     // Same Q8-scaled delta that stock accumulates for held recorded notes.
-    // Only held-note duration advances. Completed notes stay in the ghost
-    // pattern across loop wraps and silence, just as with armed recording.
+    // Completed notes stay across silence, but a take spans at most one
+    // pattern length of playing: see note_on.
     void advance(u32 delta) {
         if (!playing_ || !delta) return;
+        elapsed_ += delta;
         for (u32 i = 0; i < count_; ++i) {
             Entry& entry = entries_[i];
             if (entry.held) {
@@ -50,8 +53,29 @@ public:
     bool note_on(i32 position, u32 pitch, u32 velocity, u32 radius = 0) {
         if (!playing_ || pitch > 127 || velocity > 127) return false;
         note_off(pitch);
+        if (!velocity) return false;
+        // The take is the last pattern length of playing, ending at the newest
+        // onset, so an earlier pass never shares steps with the one replacing
+        // it. A note from about one loop ago, within half a step, is the
+        // previous pass on this step even if timing drifted. A note held
+        // for the whole loop (still held, or released less than a loop ago)
+        // stays until the new pass plays its step.
+        // Half a step in pattern ticks at every scale, like stock's pickup.
+        const u32 half_step = 240;
+        const u32 slack = half_step < context_.length / 2 ? half_step : context_.length / 2;
+        const Ticks window = static_cast<Ticks>(context_.length - slack) << 8;
+        u32 recent = 0;
+        for (u32 i = 0; i < count_; ++i) {
+            const Entry& old = entries_[i];
+            const bool sounding = old.held ||
+                (old.duration >= context_.length << 8 && elapsed_ - old.release < window);
+            const bool replaced = !sounding || same_step(old.note.position, position, slack);
+            if (elapsed_ - old.onset < window || !replaced) entries_[recent++] = old;
+            else if (old.held) --held_;
+        }
+        count_ = recent;
         // Stock rejects a full container before attempting collision pruning.
-        if (!velocity || held_ == held_capacity || count_ == capacity) return false;
+        if (held_ == held_capacity || count_ == capacity) return false;
         u32 kept = 0;
         for (u32 i = 0; i < count_; ++i) {
             const Entry& old = entries_[i];
@@ -67,6 +91,7 @@ public:
         count_ = kept;
         Entry& entry = entries_[count_++];
         entry.note = {position, 0, static_cast<u8>(pitch), static_cast<u8>(velocity)};
+        entry.onset = entry.release = elapsed_;
         entry.duration = 0;
         entry.held = true;
         ++held_;
@@ -80,6 +105,7 @@ public:
             if (entry.held && entry.note.pitch == pitch) {
                 entry.held = false;
                 --held_;
+                entry.release = elapsed_;
             }
         }
     }
@@ -98,14 +124,26 @@ public:
     void clear() { count_ = held_ = 0; }
 
 private:
+    // Positions on the loop, including stock's pickup before zero, closer
+    // than within in either direction around the wrap. Positions span less
+    // than two loops, so one subtraction reduces the distance onto the loop.
+    bool same_step(i32 a, i32 b, u32 within) const {
+        u32 distance = a >= b ? static_cast<u32>(a) - static_cast<u32>(b)
+                              : static_cast<u32>(b) - static_cast<u32>(a);
+        if (distance >= context_.length) distance -= context_.length;
+        return distance < within || context_.length - distance < within;
+    }
+
     struct Entry {
         Note note;
+        Ticks onset, release;
         u32 duration;
         bool held;
     };
     RecordingContext context_;
     Entry entries_[capacity];
     u32 count_, held_;
+    Ticks elapsed_;
     bool playing_;
 };
 
