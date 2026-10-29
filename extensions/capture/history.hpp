@@ -97,6 +97,9 @@ public:
             if (entry.held && entry.note.pitch == pitch) {
                 entry.held = false;
                 --held_;
+                // A note held for the whole loop is still sounding in the
+                // current one: count its age from the release, not the onset.
+                if (entry.duration >= context_.length << 8) entry.onset = elapsed_;
             }
         }
     }

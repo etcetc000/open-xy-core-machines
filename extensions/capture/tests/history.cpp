@@ -116,6 +116,13 @@ int main() {
     CHECK(h.note_on(4 * 480, 64, 90, 180)); h.note_off(64);
     h.note_off(36);
     CHECK(h.snapshot(notes, 120) == 2 && notes[0].pitch == 36 && notes[0].length == 16 * 480);
+    // ...and for one loop after its release, like any note.
+    h.advance(8 * step);
+    CHECK(h.note_on(12 * 480, 65, 90, 180)); h.note_off(65);
+    CHECK(h.snapshot(notes, 120) == 3 && notes[0].pitch == 36);
+    h.advance(9 * step);
+    CHECK(h.note_on(5 * 480, 67, 90, 180)); h.note_off(67);
+    CHECK(h.snapshot(notes, 120) == 2 && notes[0].pitch == 65); // Then it ages out.
     // Silence, then a single note: a take never spans more than one loop.
     h.advance(3 * 16 * step);
     CHECK(h.note_on(0, 100, 90)); h.note_off(100);
