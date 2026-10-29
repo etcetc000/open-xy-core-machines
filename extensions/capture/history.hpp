@@ -125,13 +125,13 @@ public:
 
 private:
     // Positions on the loop, including stock's pickup before zero, closer
-    // than radius in either direction around the wrap. Positions span less
+    // than within in either direction around the wrap. Positions span less
     // than two loops, so one subtraction reduces the distance onto the loop.
-    bool same_step(i32 a, i32 b, u32 radius) const {
+    bool same_step(i32 a, i32 b, u32 within) const {
         u32 distance = a >= b ? static_cast<u32>(a) - static_cast<u32>(b)
                               : static_cast<u32>(b) - static_cast<u32>(a);
         if (distance >= context_.length) distance -= context_.length;
-        return distance < radius || context_.length - distance < radius;
+        return distance < within || context_.length - distance < within;
     }
 
     struct Entry {
