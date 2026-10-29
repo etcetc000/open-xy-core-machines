@@ -60,9 +60,8 @@ public:
         // previous pass on this step even if timing drifted. A note held
         // for the whole loop (still held, or released less than a loop ago)
         // stays until the new pass plays its step.
-        // Stock's collision radius is 3/8 of a step at every scale: widen it to
-        // half a step.
-        const u32 half_step = radius + radius / 3;
+        // Half a step in pattern ticks at every scale, like stock's pickup.
+        const u32 half_step = 240;
         const u32 slack = half_step < context_.length / 2 ? half_step : context_.length / 2;
         const Ticks window = static_cast<Ticks>(context_.length - slack) << 8;
         u32 recent = 0;

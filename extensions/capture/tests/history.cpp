@@ -160,6 +160,13 @@ int main() {
     CHECK(h.note_on(230, 65, 90, 180));
     CHECK(h.snapshot(notes, 120) == 1 && notes[0].pitch == 65);
     h.note_off(65);
+    // The same step is half a step at every scale, even with no collision radius.
+    h.clear();
+    CHECK(h.note_on(0, 60, 80));
+    h.advance(16 * step + 200 * 256);
+    CHECK(h.note_on(200, 65, 90));
+    CHECK(h.snapshot(notes, 120) == 1 && notes[0].pitch == 65);
+    h.note_off(65);
     // A short note from the previous pass does not linger past its loop.
     h.clear();
     CHECK(h.note_on(4 * 480, 50, 80, 180)); h.advance(2 * step); h.note_off(50);
