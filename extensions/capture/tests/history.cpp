@@ -123,6 +123,24 @@ int main() {
     h.advance(9 * step);
     CHECK(h.note_on(5 * 480, 67, 90, 180)); h.note_off(67);
     CHECK(h.snapshot(notes, 120) == 2 && notes[0].pitch == 65); // Then it ages out.
+    // A legato chord change: the held chord on step 0 gives way to the next
+    // pass's chord there, with no stacking, before or after its release.
+    h.clear();
+    for (u32 p = 60; p < 63; ++p) CHECK(h.note_on(0, p, 80, 180));
+    h.advance(16 * step + 20 * 256);
+    for (u32 p = 65; p < 68; ++p) CHECK(h.note_on(20, p, 90, 180));
+    CHECK(h.snapshot(notes, 120) == 3 && notes[0].pitch == 65);
+    for (u32 p = 60; p < 63; ++p) h.note_off(p);
+    for (u32 p = 65; p < 68; ++p) h.note_off(p);
+    h.advance(4 * step);
+    CHECK(h.note_on(4 * 480, 70, 90, 180)); h.note_off(70);
+    CHECK(h.snapshot(notes, 120) == 4 && notes[0].pitch == 65);
+    // A short note from the previous pass does not linger past its loop.
+    h.clear();
+    CHECK(h.note_on(4 * 480, 50, 80, 180)); h.advance(2 * step); h.note_off(50);
+    h.advance(15 * step);
+    CHECK(h.note_on(5 * 480, 52, 90, 180)); h.note_off(52);
+    CHECK(h.snapshot(notes, 120) == 1 && notes[0].pitch == 52);
     // Silence, then a single note: a take never spans more than one loop.
     h.advance(3 * 16 * step);
     CHECK(h.note_on(0, 100, 90)); h.note_off(100);

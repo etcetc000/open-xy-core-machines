@@ -57,13 +57,19 @@ public:
         // The take is the last pattern length of playing, ending at the newest
         // onset, so an earlier pass never shares steps with the one replacing
         // it. A note from about one loop ago, within the collision radius, is
-        // the previous pass on this step even if timing drifted. Held notes stay.
+        // the previous pass on this step even if timing drifted. A note held
+        // for the whole loop (still held, or released less than a loop ago)
+        // stays until the new pass plays its step.
         const u32 slack = radius < context_.length / 2 ? radius : context_.length / 2;
         const Ticks window = static_cast<Ticks>(context_.length - slack) << 8;
         u32 recent = 0;
         for (u32 i = 0; i < count_; ++i) {
             const Entry& old = entries_[i];
-            if (old.held || elapsed_ - old.onset < window) entries_[recent++] = old;
+            const bool sounding = old.held ||
+                (old.duration >= context_.length << 8 && elapsed_ - old.release < window);
+            const bool replaced = !sounding || same_step(old.note.position, position, slack);
+            if (elapsed_ - old.onset < window || !replaced) entries_[recent++] = old;
+            else if (old.held) --held_;
         }
         count_ = recent;
         // Stock rejects a full container before attempting collision pruning.
@@ -83,7 +89,7 @@ public:
         count_ = kept;
         Entry& entry = entries_[count_++];
         entry.note = {position, 0, static_cast<u8>(pitch), static_cast<u8>(velocity)};
-        entry.onset = elapsed_;
+        entry.onset = entry.release = elapsed_;
         entry.duration = 0;
         entry.held = true;
         ++held_;
@@ -97,9 +103,7 @@ public:
             if (entry.held && entry.note.pitch == pitch) {
                 entry.held = false;
                 --held_;
-                // A note held for the whole loop is still sounding in the
-                // current one: count its age from the release, not the onset.
-                if (entry.duration >= context_.length << 8) entry.onset = elapsed_;
+                entry.release = elapsed_;
             }
         }
     }
@@ -118,9 +122,18 @@ public:
     void clear() { count_ = held_ = 0; }
 
 private:
+    // Positions on the loop, including stock's pickup before zero, closer
+    // than radius in either direction around the wrap.
+    bool same_step(i32 a, i32 b, u32 radius) const {
+        const u32 distance = a >= b ? static_cast<u32>(a) - static_cast<u32>(b)
+                                    : static_cast<u32>(b) - static_cast<u32>(a);
+        const u32 around = distance < context_.length ? context_.length - distance : 0;
+        return distance < radius || around < radius;
+    }
+
     struct Entry {
         Note note;
-        Ticks onset;
+        Ticks onset, release;
         u32 duration;
         bool held;
     };
