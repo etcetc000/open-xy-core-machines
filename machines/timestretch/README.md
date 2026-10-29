@@ -1,8 +1,8 @@
 # Timestretch sample engine
 
 Timestretch plays samples in time with the project, either by repitching or
-with pitch-preserving, Capicola-derived timestretch. It uses engine 35 on the
-stock drum page (page 7): each pad has its own sample and settings.
+with pitch-preserving, Capicola-derived timestretch. It forks the
+stock drum sampler (`"base": "drumSampler"`): each pad has its own sample and settings.
 
 ## Playing it
 

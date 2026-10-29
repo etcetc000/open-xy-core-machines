@@ -1,12 +1,9 @@
 {
   "schema": 1,
-  "sdk": "1.0",
+  "sdk": "1.5",
   "kind": "sample",
   "description": "Tempo-locked loops with cached pitch-preserving stretch and drum-pad controls.",
-  "identity": {
-    "engine": 35,
-    "page": 7
-  },
+  "base": "drumSampler",
   "presetDefaults": {
     "amp": {
       "decay": 0,

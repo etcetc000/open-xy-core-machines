@@ -26,6 +26,6 @@ python ../open-xy/tools/serve_harness.py --preview ../previews/fm2op-001
 ```
 
 `definition.json` owns controls, defaults and the display shape, `tables.h` and
-`orbit.hpp` hold lookup data, and `machine.json` declares the kind and identity. Shared adapters and host runners live in the SDK.
+`orbit.hpp` hold lookup data, and `machine.json` declares the kind. Shared adapters and host runners live in the SDK.
 
 See [native builds](https://github.com/etcetc000/open-xy/blob/staging/docs/build.md) to put it on the device.

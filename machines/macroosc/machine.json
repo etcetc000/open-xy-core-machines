@@ -1,13 +1,9 @@
 {
   "schema": 1,
-  "sdk": "1.3",
+  "sdk": "1.5",
   "kind": "synth",
   "description": "Mutable Instruments Braids: a wide palette of synthesis models.",
   "icon": "M5 35V12l11 23 11-23 11 23V12",
-  "identity": {
-    "engine": 26,
-    "page": 83
-  },
   "sources": [
     "vendor/braids/macro_oscillator.cc",
     "vendor/braids/analog_oscillator.cc",
