@@ -8,11 +8,13 @@ namespace opxy { namespace extensions { namespace capture {
 // No quantization or conversion from wall-clock time belongs in this buffer.
 class RecordingHistory {
 public:
+    // Q8 pattern ticks since the take began; 64 bits so they never wrap.
+    using Ticks = __UINT64_TYPE__;
     // Stock's ordinary note container and active recording list limits.
     static const u32 capacity = 120;
     static const u32 held_capacity = 20;
     constexpr RecordingHistory() : context_{}, entries_{}, count_(0), held_(0),
-                                   playing_(false) {}
+                                   elapsed_(0), playing_(false) {}
 
     // length is in stock pattern ticks, not bars or elapsed milliseconds.
     // Stop freezes the partial pass; a subsequent start begins a new take.
@@ -31,10 +33,11 @@ public:
     }
 
     // Same Q8-scaled delta that stock accumulates for held recorded notes.
-    // Only held-note duration advances. Completed notes stay in the ghost
-    // pattern across loop wraps and silence, just as with armed recording.
+    // Completed notes stay across silence, but a take spans at most one
+    // pattern length of playing: see note_on.
     void advance(u32 delta) {
         if (!playing_ || !delta) return;
+        elapsed_ += delta;
         for (u32 i = 0; i < count_; ++i) {
             Entry& entry = entries_[i];
             if (entry.held) {
@@ -51,6 +54,17 @@ public:
         if (!playing_ || pitch > 127 || velocity > 127) return false;
         note_off(pitch);
         // Stock rejects a full container before attempting collision pruning.
+        // The take is the last pattern length of playing, ending at the newest
+        // onset: a note a full loop older is dropped, so an earlier pass never
+        // lands on the same steps as the one that replaced it.
+        const Ticks window = static_cast<Ticks>(context_.length) << 8;
+        u32 recent = 0;
+        for (u32 i = 0; i < count_; ++i) {
+            const Entry& old = entries_[i];
+            if (elapsed_ - old.onset < window) entries_[recent++] = old;
+            else if (old.held) --held_;
+        }
+        count_ = recent;
         if (!velocity || held_ == held_capacity || count_ == capacity) return false;
         u32 kept = 0;
         for (u32 i = 0; i < count_; ++i) {
@@ -67,6 +81,7 @@ public:
         count_ = kept;
         Entry& entry = entries_[count_++];
         entry.note = {position, 0, static_cast<u8>(pitch), static_cast<u8>(velocity)};
+        entry.onset = elapsed_;
         entry.duration = 0;
         entry.held = true;
         ++held_;
@@ -100,12 +115,14 @@ public:
 private:
     struct Entry {
         Note note;
+        Ticks onset;
         u32 duration;
         bool held;
     };
     RecordingContext context_;
     Entry entries_[capacity];
     u32 count_, held_;
+    Ticks elapsed_;
     bool playing_;
 };
 

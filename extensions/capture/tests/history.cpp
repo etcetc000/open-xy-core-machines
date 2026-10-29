@@ -85,6 +85,29 @@ int main() {
     CHECK(h.note_on(1, 60, 99, 180)); h.note_off(60);
     CHECK(h.snapshot(notes, 120) == 2 && notes[0].pitch == 62 && notes[1].velocity == 99);
 
+    // A pass played again replaces the one before it: a take is the last
+    // pattern length of playing, so other pitches from the earlier pass do not
+    // stack on the same steps. One loop is 16 * 480 ticks.
+    c = context(); h.sync(c, true);
+    const u32 step = 480 * 256;
+    for (u32 i = 0; i < 16; ++i) { CHECK(h.note_on(i * 480, 48 + i, 80, 180)); h.advance(60 * 256); h.note_off(48 + i); h.advance(step - 60 * 256); }
+    for (u32 i = 0; i < 16; ++i) { CHECK(h.note_on(i * 480, 72 + i, 90, 180)); h.advance(60 * 256); h.note_off(72 + i); h.advance(step - 60 * 256); }
+    CHECK(h.snapshot(notes, 120) == 16);
+    for (u32 i = 0; i < 16; ++i) CHECK(notes[i].pitch == 72 + i && notes[i].position == static_cast<i32>(i * 480));
+    // A shorter retry keeps only the earlier pass's notes after the step
+    // where the retry stopped, never two notes from different passes on one step.
+    h.clear();
+    for (u32 i = 0; i < 16; ++i) { CHECK(h.note_on(i * 480, 48 + i, 80, 180)); h.note_off(48 + i); h.advance(step); }
+    for (u32 i = 0; i < 4; ++i) { CHECK(h.note_on(i * 480, 72 + i, 90, 180)); h.note_off(72 + i); h.advance(step); }
+    CHECK(h.snapshot(notes, 120) == 16);
+    for (u32 i = 0; i < 12; ++i) CHECK(notes[i].pitch == 52 + i);
+    for (u32 i = 0; i < 4; ++i) CHECK(notes[12 + i].pitch == 72 + i);
+    // Silence, then a single note: a take never spans more than one loop.
+    h.advance(3 * 16 * step);
+    CHECK(h.note_on(0, 100, 90)); h.note_off(100);
+    CHECK(h.snapshot(notes, 120) == 1 && notes[0].pitch == 100);
+    h.clear();
+
     // Repeated loops update the ghost pattern rather than fill a raw-onset FIFO.
     c = context(); h.sync(c, true);
     for (unsigned i = 0; i < 10000; ++i) {
