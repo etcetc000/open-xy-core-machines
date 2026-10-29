@@ -56,11 +56,14 @@ public:
         if (!velocity) return false;
         // The take is the last pattern length of playing, ending at the newest
         // onset, so an earlier pass never shares steps with the one replacing
-        // it. A note from about one loop ago, within the collision radius, is
-        // the previous pass on this step even if timing drifted. A note held
+        // it. A note from about one loop ago, within half a step, is the
+        // previous pass on this step even if timing drifted. A note held
         // for the whole loop (still held, or released less than a loop ago)
         // stays until the new pass plays its step.
-        const u32 slack = radius < context_.length / 2 ? radius : context_.length / 2;
+        // Stock's collision radius is 3/8 of a step at every scale: widen it to
+        // half a step.
+        const u32 half_step = radius + radius / 3;
+        const u32 slack = half_step < context_.length / 2 ? half_step : context_.length / 2;
         const Ticks window = static_cast<Ticks>(context_.length - slack) << 8;
         u32 recent = 0;
         for (u32 i = 0; i < count_; ++i) {
@@ -123,12 +126,13 @@ public:
 
 private:
     // Positions on the loop, including stock's pickup before zero, closer
-    // than radius in either direction around the wrap.
+    // than radius in either direction around the wrap. Positions span less
+    // than two loops, so one subtraction reduces the distance onto the loop.
     bool same_step(i32 a, i32 b, u32 radius) const {
-        const u32 distance = a >= b ? static_cast<u32>(a) - static_cast<u32>(b)
-                                    : static_cast<u32>(b) - static_cast<u32>(a);
-        const u32 around = distance < context_.length ? context_.length - distance : 0;
-        return distance < radius || around < radius;
+        u32 distance = a >= b ? static_cast<u32>(a) - static_cast<u32>(b)
+                              : static_cast<u32>(b) - static_cast<u32>(a);
+        if (distance >= context_.length) distance -= context_.length;
+        return distance < radius || context_.length - distance < radius;
     }
 
     struct Entry {

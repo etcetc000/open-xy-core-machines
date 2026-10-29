@@ -135,6 +135,31 @@ int main() {
     h.advance(4 * step);
     CHECK(h.note_on(4 * 480, 70, 90, 180)); h.note_off(70);
     CHECK(h.snapshot(notes, 120) == 4 && notes[0].pitch == 65);
+    // A chord change almost half a step late, and across the wrap with a pickup
+    // before zero, still replaces the held note on its step.
+    h.clear();
+    CHECK(h.note_on(16 * 480 - 100, 60, 80, 180));
+    h.advance(16 * step + 120 * 256);
+    CHECK(h.note_on(-100 + 120 + 100, 65, 90, 180));
+    CHECK(h.snapshot(notes, 120) == 1 && notes[0].pitch == 65);
+    h.clear();
+    CHECK(h.note_on(-100, 60, 80, 180));
+    h.advance(16 * step - 90 * 256);
+    CHECK(h.note_on(16 * 480 - 190, 65, 90, 180));
+    CHECK(h.snapshot(notes, 120) == 1 && notes[0].pitch == 65);
+    h.note_off(65); h.clear();
+    // A deep pickup and a late note are measured around the loop, not matched
+    // outright: 280 ticks apart is more than half a step.
+    CHECK(h.note_on(-300, 60, 80, 180));
+    h.advance(16 * step);
+    CHECK(h.note_on(16 * 480 - 20, 65, 90, 180));
+    CHECK(h.snapshot(notes, 120) == 2);
+    h.note_off(60); h.note_off(65); h.clear();
+    CHECK(h.note_on(0, 60, 80, 180));
+    h.advance(16 * step + 230 * 256);
+    CHECK(h.note_on(230, 65, 90, 180));
+    CHECK(h.snapshot(notes, 120) == 1 && notes[0].pitch == 65);
+    h.note_off(65);
     // A short note from the previous pass does not linger past its loop.
     h.clear();
     CHECK(h.note_on(4 * 480, 50, 80, 180)); h.advance(2 * step); h.note_off(50);
