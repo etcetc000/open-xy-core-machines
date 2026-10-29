@@ -20,4 +20,10 @@ repository of its own.
 - A release is a tag here, then a pull request against the SDK's `staging` that
   changes only `catalog/machines.json` (or `catalog/extensions.json`) to pin the
   new commit.
+- A release's catalog entry carries a hardware `cpu` record from the SDK's
+  [hardware profiling](https://github.com/etcetc000/open-xy/blob/staging/docs/profiling.md): a profiling build (synth controls are swept
+  by default), three runs on the user's OP-XY, then `profile report`. A synth's
+  record is its heaviest swept setting. Above the **recommended 3.5%** of the
+  block budget, tell the user which setting is heaviest and suggest making it
+  lighter before releasing; it is still accepted, with a warning.
 - Device operations need the user's explicit instruction each time.
