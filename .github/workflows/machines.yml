@@ -1,7 +1,7 @@
 name: Machine checks
-# Checks every machine in this repository against the Open-XY SDK it targets:
-# its records and sources, a browser preview of each synth, its own host tests,
-# and a firmware compile with the pinned Blackfin tools. No stock files or device.
+# Checks every machine and extension in this repository against the Open-XY SDK it
+# targets: its records and sources, a browser preview of each synth, its own host
+# tests, and a firmware compile with the pinned Blackfin tools. No stock files or device.
 on:
   push:
   pull_request:
@@ -35,13 +35,17 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y clang lld
           python -m pip install numpy==2.3.5
-      - name: Machine checks
+      - name: Machine and extension checks
         shell: bash
         run: |
-          # A machine at the repository root, or one in each machines/<id>/.
+          # A machine at the repository root, or one in each machines/<id>/; an
+          # extension in each extensions/<id>/.
           args=()
           for record in machines/machine.json machines/machines/*/machine.json; do
             [ -f "$record" ] && args+=(--machine "$(dirname "$record")")
+          done
+          for record in machines/extensions/*/extension.json; do
+            [ -f "$record" ] && args+=(--extension "$(dirname "$record")")
           done
           python open-xy/sdk.py test "${args[@]}" --cxx clang++ --host-cxx g++
   firmware:
@@ -61,11 +65,14 @@ jobs:
           python-version: '3.11'
       - name: Pinned Blackfin tools
         run: python open-xy/sdk.py toolchain fetch
-      - name: Firmware compile with every machine here
+      - name: Firmware compile with every machine and extension here
         shell: bash
         run: |
           args=()
           for record in machines/machine.json machines/machines/*/machine.json; do
             [ -f "$record" ] && args+=(--machine "$(dirname "$record")")
+          done
+          for record in machines/extensions/*/extension.json; do
+            [ -f "$record" ] && args+=(--extension "$(dirname "$record")")
           done
           python open-xy/sdk.py compile "${args[@]}" --out "$RUNNER_TEMP/module"
