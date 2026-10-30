@@ -26,10 +26,10 @@ for octave in range(2):
     for i in (1, 2, 3, 5, 6):
         rect(18 + (octave * 7 + i - 0.3) * width, 50, width * 0.6, 26, '#000000')
 
-for i, label in enumerate(('6', 'm7', 'M7', '9', 'simp', 'adv', 'free')):
+for i, label in enumerate(('6', 'm7', 'M7', '9', '11', '13', 'b9')):
     text(18 + (i + 0.5) * width - len(label) * 2.5, 110, label, 11)
-for i, label in zip((1, 2, 3, 5, 6), ('dim', 'min', 'maj', 'sus', 'add/full')):
-    text(18 + i * width - len(label) * (2 if i == 6 else 2.5), 42, label, 8 if i == 6 else 11)
+for i, label in zip((1, 2, 3, 5), ('dim', 'min', 'maj', 'sus')):
+    text(18 + i * width - len(label) * 2.5, 42, label, 11)
 
 for x, w in ((18, 219), (243, 219)):
     parts.append(f'<path d="M{x} 119 H{x+w}" fill="none" stroke="#B4B4B4" stroke-width="0.5"/>')
@@ -42,7 +42,7 @@ for key in range(24):
     black = pc in BLACK
     position = (1, 2, 3, 5, 6)[BLACK.index(pc)] if black else WHITE.index(pc) + 0.5
     dot(f'chords_dot_{key}', 18 + (octave * 7 + position) * width, 67 if black else 84, black)
-parts.append('<text id="chords_text" transform="matrix(1 0 0 1 240 157)" fill="#F2F2F2" font-family="UniversNextPro-Light" font-size="18">simple/add</text>')
+parts.append('<text id="chords_text" transform="matrix(1 0 0 1 240 157)" fill="#F2F2F2" font-family="UniversNextPro-Light" font-size="18">chords</text>')
 
 # Every MIDI pitch has a retained key and activity dot. The SDK fits the
 # visible range and positions these; white keys precede black keys in paint order.

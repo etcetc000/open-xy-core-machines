@@ -1,6 +1,6 @@
 {
   "schema": 1,
   "kind": "player",
-  "description": "Left-hand chord types and extensions in Orchid order, right-hand roots, with Simple, Advanced and Free play styles.",
+  "description": "Hold left-hand chord types and extensions, then play right-hand roots. Includes 11, 13 and flat 9 colours.",
   "sdk": "1.7"
 }

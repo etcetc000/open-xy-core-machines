@@ -4,9 +4,8 @@
 // holds chord modifiers and the upper octave plays chord roots. Modifiers never
 // sound, whatever octave the keyboard is shifted to:
 //   black F# G# A# C#  chord type  dim min maj sus
-//   white F G A B      extension   6 m7 M7 9
-//   white C D E        play style  simple advanced free
-//   black D#           extension addition: add notes / replay chord
+//   white F G A B C D E  extension  6 m7 M7 9 11 13 b9
+//   black D#             unused (silent)
 // A root plays the most recently held chord type with every held extension,
 // or itself alone when no type is held. Notes outside the keyboard's two
 // octaves (from the sequencer) are roots.
@@ -20,11 +19,9 @@ using opxy::player::Plan;
 
 const u32 kF = 5;  // pitch class of the keyboard's first key
 enum Type : u8 { kNone, kDim, kMin, kMaj, kSus, kTypes };
-enum Style : u8 { kSimple, kAdvanced, kFree };
-const u32 kExtensionCount = 4;
+const u32 kExtensionCount = 7;
 struct Root {
     u8 note, velocity, type, extensions;  // note + 1; zero is an empty slot
-    u8 pending, added;  // 0 unchanged, 1 replace, 2 append; newly added extensions
 };
 
 struct State {
@@ -35,7 +32,6 @@ struct State {
     u32 seed;       // random direction
     u8 root;        // the last root played, plus one; 0 before the first
     u8 notes[12];   // the note holding each modifier key, plus one; 0 when up
-    u8 style, replay;
     u8 display_type, display_extensions;
     u8 order[4];    // held types in press order; last wins (Secret Chords off)
     Root roots[8];
@@ -43,16 +39,21 @@ struct State {
 
 namespace {
 const u8 kChords[kTypes][3] = {{0}, {0, 3, 6}, {0, 3, 7}, {0, 4, 7}, {0, 5, 7}};
-const u8 kExtensions[kExtensionCount] = {9, 10, 11, 14};
+const u8 kExtensions[kExtensionCount] = {9, 10, 11, 14, 17, 21, 13};
 const i32 kVoicingSteps = 6;  // the voicing encoder spans -6..+6 inversion steps
 
-const u8 kSimpleKey = 7, kAdvancedKey = 9, kFreeKey = 11, kAdditionKey = 10;
 // Orchid's upper type row on black keys, lower extension row on white keys.
 const u8 kModifier[12] = {kTypes, kDim, kTypes + 1, kMin, kTypes + 2, kMaj,
-                        kTypes + 3, 0, kSus, 0, 0, 0};
+                        kTypes + 3, kTypes + 4, kSus, kTypes + 5, 0, kTypes + 6};
 // The modifier octave key of each chord type and extension, for the page.
 const u8 kTypeKey[kTypes] = {0, 1, 3, 5, 8};
-const u8 kExtensionKey[kExtensionCount] = {0, 2, 4, 6};
+const u8 kExtensionKey[kExtensionCount] = {0, 2, 4, 6, 7, 9, 11};
+
+u8 effective_extensions(u8 extensions) {
+    // 6 and 13 are the same pitch class; prefer the higher register when both
+    // are requested. This leaves room for more distinct chord colours.
+    return extensions & 32 ? static_cast<u8>(extensions & ~1u) : extensions;
+}
 
 // The modifier key (0..11 from F) a note plays, or -1 for a root.
 int modifier_key(u32 note, u32 lowest_key) {
@@ -115,10 +116,11 @@ void name(Text& out, u32 root, u32 type, u32 extensions) {
     if (type == kNone) return;
     bool m7 = extensions & 2, M7 = extensions & 4;
     const bool e6 = extensions & 1, e9 = extensions & 8;
+    const bool e11 = extensions & 16, e13 = extensions & 32, flat9 = extensions & 64;
     u32 q = type;
     const bool seventh = m7 || M7;
-    const char* n = e9 ? "9" : "7";
-    static const char* const quality[] = {"", "diminished", "minor", "major", "sus4"};
+    const char* n = e13 ? "13" : e11 ? "11" : e9 ? "9" : "7";
+    static const char* const quality[] = {"", "dim", "minor", "major", "sus4"};
     out << " ";
     if (m7) {
         static const char* const words[] = {"", "half-dim ", "minor ", "dominant ", ""};
@@ -136,12 +138,16 @@ void name(Text& out, u32 root, u32 type, u32 extensions) {
     if (m7 && M7) out << " + maj7";
     if (e6 && (seventh || q != kDim)) out << (seventh ? " 13" : " 6");
     if (!seventh && e9) out << " add 9";
+    if (!seventh && e11) out << " add 11";
+    if (!seventh && e13) out << " add 13";
+    if (flat9) out << " b9";
 }
 }
 
 // A modifier is released by the note that pressed it, so an octave shift
 // while it is held cannot leave it stuck.
 bool release(State& state, u32 note) {
+    if (note > 127) return true;
     int key = -1;
     for (int k = 0; k < 12; ++k)
         if (state.notes[k] == note + 1) key = k;
@@ -172,7 +178,12 @@ void make_plan(State& state, const Controls& controls, const Root& root, Plan& p
     if (root.type == kNone) {
         notes[count++] = static_cast<i32>(note);
     } else {
-        for (u32 i = 0; i < 3; ++i) notes[count++] = static_cast<i32>(note + kChords[root.type][i]);
+        u32 extensions = 0;
+        for (u32 i = 0; i < kExtensionCount; ++i) if (root.extensions & (1u << i)) ++extensions;
+        // Keep the root, third/suspension and every selected extension. Only
+        // an overfull selection omits the fifth to fit the eight-tone ABI.
+        const u32 base = extensions + 3 > opxy::player::max_tones ? 2 : 3;
+        for (u32 i = 0; i < base; ++i) notes[count++] = static_cast<i32>(note + kChords[root.type][i]);
         for (u32 i = 0; i < kExtensionCount; ++i)
             if (root.extensions & (1u << i)) add(notes, count, static_cast<i32>(note + kExtensions[i]));
     }
@@ -217,11 +228,6 @@ bool press(State& state, const Controls& controls, u32 note, u32 velocity, Plan&
         // Ignore repeat note-ons until this physical control has been released.
         if (state.notes[key]) return true;
         state.notes[key] = static_cast<u8>(note + 1);
-        if (key == kSimpleKey || key == kAdvancedKey || key == kFreeKey) {
-            state.style = key == kSimpleKey ? kSimple : key == kAdvancedKey ? kAdvanced : kFree;
-            return true;
-        }
-        if (key == kAdditionKey) { state.replay = !state.replay; return true; }
         const u8 m = kModifier[key];
         if (m >= kDim && m < kTypes) {
             state.held |= static_cast<u8>(1u << m);
@@ -230,22 +236,9 @@ bool press(State& state, const Controls& controls, u32 note, u32 velocity, Plan&
             for (u8 t : state.order) if (t && t != m) state.order[n++] = t;
             state.order[n++] = m;
             while (n < 4) state.order[n++] = 0;
-            for (auto& root : state.roots) {
-                if (!root.note || state.style == kSimple || (state.style == kAdvanced && root.type)) continue;
-                root.type = m;
-                root.extensions = state.extensions;
-                root.pending = 1;
-                root.added = 0;
-            }
-        } else {
+        } else if (m >= kTypes) {
             const u8 bit = static_cast<u8>(1u << (m - kTypes));
             state.extensions |= bit;
-            if (state.style != kSimple) for (auto& root : state.roots) {
-                if (!root.note || !root.type) continue;
-                if (state.replay) root.pending = 1;
-                else if (!(root.extensions & bit)) { root.pending = 2; root.added |= bit; }
-                root.extensions |= bit;
-            }
         }
         return true;
     }
@@ -254,54 +247,18 @@ bool press(State& state, const Controls& controls, u32 note, u32 velocity, Plan&
     if (!target) for (auto& root : state.roots) if (!root.note) { target = &root; break; }
     if (!target) return true;  // eight roots are already held
     *target = Root{static_cast<u8>(note + 1), static_cast<u8>(velocity), state.last,
-                   static_cast<u8>(state.last ? state.extensions : 0), 0, 0};
+                   static_cast<u8>(state.last ? effective_extensions(state.extensions) : 0)};
     make_plan(state, controls, *target, plan);
     state.root = target->note;
     state.display_type = target->type;
     state.display_extensions = target->extensions;
-    // An entirely out-of-range chord has no stock record to update later.
+    // An entirely out-of-range chord has no stock record to release later.
     if (!plan.count) *target = Root{};
     return true;
 }
 
-bool update(State& state, const Controls& controls, opxy::player::Update& change) {
-    for (auto& root : state.roots) {
-        if (!root.note || !root.pending) continue;
-        change.root = root.note - 1;
-        change.mode = root.pending == 2 ? opxy::player::Add : opxy::player::Replace;
-        make_plan(state, controls, root, change.plan);
-        if (change.mode == opxy::player::Add) {
-            // Keep the original chord's attacks and voicing. Only extension
-            // pitch classes newly requested by this gesture may be appended.
-            u32 count = 0;
-            for (u32 i = 0; i < change.plan.count; ++i) {
-                bool added = false;
-                for (u32 ext = 0; ext < kExtensionCount; ++ext)
-                    if ((root.added & (1u << ext)) && change.plan.tones[i].pitch % 12 ==
-                        (change.root + kExtensions[ext]) % 12) added = true;
-                if (added) {
-                    change.plan.tones[count] = change.plan.tones[i];
-                    change.plan.tones[count].delay = static_cast<opxy::u16>(count * steps(controls.value[0], 64));
-                    ++count;
-                }
-            }
-            change.plan.count = count;
-        }
-        root.pending = root.added = 0;
-        if (root.note == state.root) {
-            state.display_type = root.type;
-            state.display_extensions = root.extensions;
-        }
-        return true;
-    }
-    return false;
-}
-
 void reset(State& state) {
-    const u8 style = state.style, replay = state.replay;
     state = State{};
-    state.style = style;
-    state.replay = replay;
 }
 
 // The page: root bits 0..11 draw on the right, modifier bits 12..23 on the
@@ -316,11 +273,7 @@ void display(const State& state, const Controls& controls, Display& display) {
     for (u32 i = 0; i < kExtensionCount; ++i)
         if (state.extensions & (1u << i)) display.lit |= 1u << (12 + kExtensionKey[i]);
     Text line = text(display.text);
-    static const char* const styles[] = {"simple", "advanced", "free"};
-    line << styles[state.style] << (state.replay ? "/chord" : "/add");
-    if (state.root) { line << "  "; name(line, state.root - 1, state.display_type, state.display_extensions); }
-    display.lit |= 1u << (12 + (state.style == kSimple ? kSimpleKey : state.style == kAdvanced ? kAdvancedKey : kFreeKey));
-    if (state.replay) display.lit |= 1u << (12 + kAdditionKey);
+    if (state.root) name(line, state.root - 1, state.display_type, state.display_extensions);
     Text strum = text(display.values[0]);
     strum << static_cast<i32>(steps(controls.value[0], 64));
     static const char* const directions[4] = {"up", "dn", "alt", "rnd"};
