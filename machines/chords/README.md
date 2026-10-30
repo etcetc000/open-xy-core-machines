@@ -1,23 +1,26 @@
 # Chords note player
 
-Hold chord types and extensions on one octave of the keyboard and play roots
-on the other; every root sounds the held chord. It plays whichever instrument
+Hold chord types and extensions on the lower left octave with your left hand
+and play roots on the upper right octave with your right hand; every root
+sounds the held chord. It plays whichever instrument
 the track uses, live or from the sequencer.
 
 At the default keyboard octave the OP-XY's keys run F3 to E5:
 
 | Keys | Role |
 | --- | --- |
-| F3..E4, and every key outside F4..E5 | Chord roots |
-| F4 G4 A4 B4 C5 D5 E5 | Chord types: dim, aug, min, maj, sus (sus4), dom (dominant 7) and half (half-diminished 7). The last one pressed wins |
-| F♯4 G♯4 A♯4 C♯5 D♯5 | Extensions 6, m7, M7, 9 and 11 (+9, +10, +11, +14 and +17 semitones). They stack |
+| F4..E5, and every key outside F3..E4 | Chord roots |
+| F3 G3 A3 B3 C4 D4 E4 | Chord types: dim, aug, min, maj, sus (sus4), dom (dominant 7) and half (half-diminished 7). The last one pressed wins |
+| F♯3 G♯3 A♯3 C♯4 D♯4 | Extensions 6, m7, M7, 9 and 11 (+9, +10, +11, +14 and +17 semitones). They stack |
 
 With no chord type held, a root plays alone. Extensions only apply with a
 chord type. Combinations build richer chords: maj + m7 is a dominant 7th,
 dim + 6 a diminished 7th, min + m7 + 9 a minor 9th, dom + 9 + 11 an 11th.
 A tone that two keys add sounds once, so a chord holds at most eight tones.
 Modifier keys are ordinary notes, so sequencer steps on that octave change the
-chord during playback.
+chord during playback. Keyboard octave shifts preserve the left-hand modifier
+and right-hand root roles. Patterns recorded with the previous reversed split
+need their modifier and root notes moved to the corresponding new octaves.
 
 | Encoder | Caption | Control | Range |
 | --- | --- | --- | --- |

@@ -1,7 +1,7 @@
 #include <opxy/player.hpp>
 
 // Chord player. On the OP-XY's two-octave F-to-E keyboard, the lower octave
-// plays chord roots and the upper octave holds chord modifiers, which never
+// holds chord modifiers and the upper octave plays chord roots. Modifiers never
 // sound, whatever octave the keyboard is shifted to:
 //   white F G A B C D E  chord type  dim aug min maj sus dom half
 //   black F# G# A# C# D#  extension  6 m7 M7 9 11
@@ -47,7 +47,7 @@ const u8 kExtensionKey[kExtensionCount] = {1, 3, 5, 8, 10};
 
 // The modifier key (0..11 from F) a note plays, or -1 for a root.
 int modifier_key(u32 note, u32 lowest_key) {
-    return note >= lowest_key + 12 && note < lowest_key + 24 ? static_cast<int>(note - lowest_key - 12) : -1;
+    return note >= lowest_key && note < lowest_key + 12 ? static_cast<int>(note - lowest_key) : -1;
 }
 
 u32 steps(i32 value, u32 count) {  // Q31 0..1 -> 0..count-1, count <= 65536
@@ -216,8 +216,9 @@ bool press(State& state, const Controls& controls, u32 note, u32 velocity, Plan&
     return true;
 }
 
-// The page: dots on the selected root (lower octave) and on every held
-// chord type and extension (upper octave), the chord in words, and the four
+// The page: root bits 0..11 draw on the right, modifier bits 12..23 on the
+// left. These are artwork identities, not physical key indices. The chord
+// appears in words beneath them, along with the four
 // encoder values.
 void display(const State& state, const Controls& controls, Display& display) {
     display.lit = 0;
