@@ -1,0 +1,323 @@
+<g id="chords_panel">
+<rect x="0" y="20" width="480" height="200" fill="#000000"/>
+<rect x="18" y="50" width="31.7143" height="43" fill="#B4B4B4" stroke="#000000" stroke-width="1"/>
+<rect x="49.7143" y="50" width="31.7143" height="43" fill="#B4B4B4" stroke="#000000" stroke-width="1"/>
+<rect x="81.4286" y="50" width="31.7143" height="43" fill="#B4B4B4" stroke="#000000" stroke-width="1"/>
+<rect x="113.143" y="50" width="31.7143" height="43" fill="#B4B4B4" stroke="#000000" stroke-width="1"/>
+<rect x="144.857" y="50" width="31.7143" height="43" fill="#B4B4B4" stroke="#000000" stroke-width="1"/>
+<rect x="176.571" y="50" width="31.7143" height="43" fill="#B4B4B4" stroke="#000000" stroke-width="1"/>
+<rect x="208.286" y="50" width="31.7143" height="43" fill="#B4B4B4" stroke="#000000" stroke-width="1"/>
+<rect x="40.2" y="50" width="19.0286" height="26" fill="#000000" stroke="#000000" stroke-width="1"/>
+<rect x="71.9143" y="50" width="19.0286" height="26" fill="#000000" stroke="#000000" stroke-width="1"/>
+<rect x="103.629" y="50" width="19.0286" height="26" fill="#000000" stroke="#000000" stroke-width="1"/>
+<rect x="167.057" y="50" width="19.0286" height="26" fill="#000000" stroke="#000000" stroke-width="1"/>
+<rect x="198.771" y="50" width="19.0286" height="26" fill="#000000" stroke="#000000" stroke-width="1"/>
+<rect x="240" y="50" width="31.7143" height="43" fill="#F0F0F0" stroke="#000000" stroke-width="1"/>
+<rect x="271.714" y="50" width="31.7143" height="43" fill="#F0F0F0" stroke="#000000" stroke-width="1"/>
+<rect x="303.429" y="50" width="31.7143" height="43" fill="#F0F0F0" stroke="#000000" stroke-width="1"/>
+<rect x="335.143" y="50" width="31.7143" height="43" fill="#F0F0F0" stroke="#000000" stroke-width="1"/>
+<rect x="366.857" y="50" width="31.7143" height="43" fill="#F0F0F0" stroke="#000000" stroke-width="1"/>
+<rect x="398.571" y="50" width="31.7143" height="43" fill="#F0F0F0" stroke="#000000" stroke-width="1"/>
+<rect x="430.286" y="50" width="31.7143" height="43" fill="#F0F0F0" stroke="#000000" stroke-width="1"/>
+<rect x="262.2" y="50" width="19.0286" height="26" fill="#000000" stroke="#000000" stroke-width="1"/>
+<rect x="293.914" y="50" width="19.0286" height="26" fill="#000000" stroke="#000000" stroke-width="1"/>
+<rect x="325.629" y="50" width="19.0286" height="26" fill="#000000" stroke="#000000" stroke-width="1"/>
+<rect x="389.057" y="50" width="19.0286" height="26" fill="#000000" stroke="#000000" stroke-width="1"/>
+<rect x="420.771" y="50" width="19.0286" height="26" fill="#000000" stroke="#000000" stroke-width="1"/>
+<text transform="matrix(1 0 0 1 31.3571 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">6</text>
+<text transform="matrix(1 0 0 1 60.5714 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">m7</text>
+<text transform="matrix(1 0 0 1 92.2857 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">M7</text>
+<text transform="matrix(1 0 0 1 126.5 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">9</text>
+<text transform="matrix(1 0 0 1 155.714 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">11</text>
+<text transform="matrix(1 0 0 1 187.429 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">13</text>
+<text transform="matrix(1 0 0 1 219.143 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">b9</text>
+<text transform="matrix(1 0 0 1 42.2143 42)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">dim</text>
+<text transform="matrix(1 0 0 1 73.9286 42)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">min</text>
+<text transform="matrix(1 0 0 1 105.643 42)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">maj</text>
+<text transform="matrix(1 0 0 1 169.071 42)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">sus</text>
+<path d="M18 119 H237" fill="none" stroke="#B4B4B4" stroke-width="0.5"/>
+<path d="M243 119 H462" fill="none" stroke="#B4B4B4" stroke-width="0.5"/>
+<text transform="matrix(1 0 0 1 18 136)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="13">modifier</text>
+<text transform="matrix(1 0 0 1 439 136)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="13">play</text>
+<circle id="chords_dot_0" transform="matrix(1 0 0 1 255.857 84)" cx="0" cy="0" r="4" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_dot_1" transform="matrix(1 0 0 1 271.714 67)" cx="0" cy="0" r="4" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_dot_2" transform="matrix(1 0 0 1 287.571 84)" cx="0" cy="0" r="4" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_dot_3" transform="matrix(1 0 0 1 303.429 67)" cx="0" cy="0" r="4" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_dot_4" transform="matrix(1 0 0 1 319.286 84)" cx="0" cy="0" r="4" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_dot_5" transform="matrix(1 0 0 1 335.143 67)" cx="0" cy="0" r="4" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_dot_6" transform="matrix(1 0 0 1 351 84)" cx="0" cy="0" r="4" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_dot_7" transform="matrix(1 0 0 1 382.714 84)" cx="0" cy="0" r="4" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_dot_8" transform="matrix(1 0 0 1 398.571 67)" cx="0" cy="0" r="4" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_dot_9" transform="matrix(1 0 0 1 414.429 84)" cx="0" cy="0" r="4" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_dot_10" transform="matrix(1 0 0 1 430.286 67)" cx="0" cy="0" r="4" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_dot_11" transform="matrix(1 0 0 1 446.143 84)" cx="0" cy="0" r="4" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_dot_12" transform="matrix(1 0 0 1 33.8571 84)" cx="0" cy="0" r="4" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_dot_13" transform="matrix(1 0 0 1 49.7143 67)" cx="0" cy="0" r="4" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_dot_14" transform="matrix(1 0 0 1 65.5714 84)" cx="0" cy="0" r="4" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_dot_15" transform="matrix(1 0 0 1 81.4286 67)" cx="0" cy="0" r="4" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_dot_16" transform="matrix(1 0 0 1 97.2857 84)" cx="0" cy="0" r="4" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_dot_17" transform="matrix(1 0 0 1 113.143 67)" cx="0" cy="0" r="4" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_dot_18" transform="matrix(1 0 0 1 129 84)" cx="0" cy="0" r="4" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_dot_19" transform="matrix(1 0 0 1 160.714 84)" cx="0" cy="0" r="4" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_dot_20" transform="matrix(1 0 0 1 176.571 67)" cx="0" cy="0" r="4" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_dot_21" transform="matrix(1 0 0 1 192.429 84)" cx="0" cy="0" r="4" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_dot_22" transform="matrix(1 0 0 1 208.286 67)" cx="0" cy="0" r="4" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_dot_23" transform="matrix(1 0 0 1 224.143 84)" cx="0" cy="0" r="4" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<text id="chords_text" transform="matrix(1 0 0 1 240 157)" fill="#F2F2F2" font-family="UniversNextPro-Light" font-size="18">chords</text>
+<path id="chords_key_0" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_2" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_4" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_5" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_7" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_9" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_11" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_12" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_14" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_16" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_17" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_19" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_21" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_23" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_24" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_26" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_28" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_29" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_31" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_33" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_35" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_36" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_38" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_40" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_41" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_43" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_45" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_47" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_48" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_50" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_52" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_53" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_55" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_57" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_59" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_60" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_62" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_64" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_65" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_67" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_69" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_71" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_72" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_74" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_76" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_77" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_79" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_81" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_83" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_84" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_86" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_88" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_89" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_91" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_93" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_95" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_96" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_98" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_100" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_101" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_103" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_105" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_107" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_108" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_110" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_112" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_113" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_115" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_117" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_119" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_120" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_122" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_124" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_125" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_127" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_1" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_3" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_6" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_8" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_10" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_13" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_15" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_18" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_20" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_22" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_25" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_27" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_30" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_32" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_34" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_37" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_39" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_42" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_44" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_46" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_49" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_51" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_54" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_56" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_58" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_61" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_63" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_66" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_68" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_70" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_73" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_75" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_78" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_80" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_82" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_85" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_87" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_90" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_92" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_94" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_97" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_99" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_102" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_104" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_106" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_109" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_111" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_114" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_116" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_118" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_121" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_123" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<path id="chords_key_126" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H6 V27 H0 Z" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_0" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_1" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_2" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_3" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_4" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_5" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_6" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_7" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_8" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_9" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_10" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_11" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_12" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_13" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_14" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_15" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_16" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_17" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_18" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_19" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_20" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_21" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_22" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_23" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_24" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_25" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_26" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_27" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_28" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_29" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_30" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_31" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_32" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_33" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_34" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_35" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_36" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_37" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_38" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_39" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_40" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_41" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_42" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_43" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_44" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_45" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_46" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_47" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_48" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_49" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_50" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_51" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_52" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_53" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_54" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_55" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_56" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_57" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_58" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_59" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_60" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_61" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_62" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_63" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_64" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_65" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_66" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_67" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_68" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_69" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_70" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_71" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_72" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_73" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_74" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_75" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_76" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_77" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_78" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_79" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_80" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_81" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_82" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_83" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_84" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_85" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_86" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_87" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_88" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_89" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_90" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_91" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_92" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_93" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_94" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_95" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_96" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_97" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_98" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_99" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_100" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_101" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_102" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_103" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_104" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_105" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_106" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_107" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_108" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_109" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_110" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_111" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_112" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_113" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_114" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_115" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_116" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_117" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_118" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_119" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_120" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_121" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_122" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_123" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_124" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_125" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+<circle id="chords_played_126" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
+<circle id="chords_played_127" transform="matrix(1 0 0 1 1024 0)" cx="0" cy="0" r="2.5" fill="#000000" stroke="#000000" stroke-width="0.5"/>
+</g>
