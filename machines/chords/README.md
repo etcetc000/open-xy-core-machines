@@ -1,55 +1,108 @@
 # Chords note player
 
-Hold chord types and extensions on the lower left octave with your left hand
-and play roots on the upper right octave with your right hand; every root
-sounds the held chord. It plays whichever instrument
-the track uses, live or from the sequencer.
+Hold modifiers on the lower left octave and play roots on the upper right.
+The eight modifiers follow Orchid's order: **Dim, Min, Maj, Sus** in the
+upper row, **6, m7, M7, 9** below. On OP-XY, types use black keys and
+extensions use white keys. Four spare keys select performance settings,
+keeping the existing str/dir/voi/spr header.
 
-At the default keyboard octave the OP-XY's keys run F3 to E5:
+At the default keyboard octave:
 
-| Keys | Role |
+| Keys, left to right | Role |
 | --- | --- |
-| F4..E5, and every key outside F3..E4 | Chord roots |
-| F3 G3 A3 B3 C4 D4 E4 | Chord types: dim, aug, min, maj, sus (sus4), dom (dominant 7) and half (half-diminished 7). The last one pressed wins |
-| F♯3 G♯3 A♯3 C♯4 D♯4 | Extensions 6, m7, M7, 9 and 11 (+9, +10, +11, +14 and +17 semitones). They stack |
+| F♯3 G♯3 A♯3 C♯4 | Chord types: dim, min, maj, sus4 |
+| F3 G3 A3 B3 | Extensions: 6, m7, M7, 9 |
+| C4 D4 E4 | Select Simple, Advanced, Free |
+| D♯4 | Toggle Add Note / Play Chord |
+| F4..E5, and notes outside F3..E4 | Roots |
 
-With no chord type held, a root plays alone. Extensions only apply with a
-chord type. Combinations build richer chords: maj + m7 is a dominant 7th,
-dim + 6 a diminished 7th, min + m7 + 9 a minor 9th, dom + 9 + 11 an 11th.
-A tone that two keys add sounds once, so a chord holds at most eight tones.
-Modifier keys are ordinary notes, so sequencer steps on that octave change the
-chord during playback. Keyboard octave shifts preserve the left-hand modifier
-and right-hand root roles. Patterns recorded with the previous reversed split
-need their modifier and root notes moved to the corresponding new octaves.
+Modifiers alone are silent. Extensions require a chord type. With no type
+held, a root plays alone. Multiple extensions combine; the last pressed type
+wins when several types are held. This corresponds to Orchid with Secret
+Chords disabled; its additional multi-type combinations are not implemented.
+
+Keyboard octave shifts preserve physical roles. Held inputs release by their
+original notes even after a shift. Existing sequences made with the earlier
+modifier layout need their modifier notes remapped.
+
+## Play styles
+
+| Gesture | Simple | Advanced | Free |
+| --- | --- | --- | --- |
+| Hold type, then root | Chord | Chord | Chord |
+| Hold root, then type | Keeps single note | Starts chord | Starts chord |
+| Release/repress type while root stays down | Keeps captured chord | Keeps captured chord | Retriggers or changes chord |
+| Release root | Releases tones | Releases tones | Releases tones |
+
+Simple is the default. Advanced allows one chord activation per root press.
+Free allows repeated changes while roots stay down. Changes apply to all held
+roots, up to eight roots and eight tones per root.
+
+In Advanced and Free, adding an extension uses the selected addition mode:
+
+- **Add Note** (default): starts only the newly requested extension, preserving
+  existing notes, their attacks and queued strum tones.
+- **Play Chord**: releases and retriggers the expanded chord.
+
+Releasing modifiers does not remove captured tones. They remain until root
+release or chord replacement. Repressing a captured extension in Add Note
+mode does not duplicate it; Play Chord retriggers it. Changing a setting
+alone does not retrigger a chord.
+
+Settings survive stop/all-notes-off but reset to Simple/Add when the player
+object is recreated. They are not saved as project parameters; recorded
+setting-key events can select them during playback.
+
+## Encoders and screen
 
 | Encoder | Caption | Control | Range |
 | --- | --- | --- | --- |
-| 1 | str | Strum | 0..63: the delay between chord tones, in player steps |
-| 2 | dir | Direction | up, dn, alt (alternating each chord) or rnd (random first tone) |
-| 3 | voi | Voicing | -6..+6 inversion steps: each step up moves the lowest note an octave up, each step down the highest an octave down |
-| 4 | spr | Spread | off or on: every second note rises an octave |
+| 1 | str | Strum | 0..63 player steps between tones |
+| 2 | dir | Direction | up, dn, alt or rnd |
+| 3 | voi | Voicing | -6..+6 inversion steps |
+| 4 | spr | Spread | off/on; every second tone rises one octave |
 
-The upper keyboard shows held chord types and extensions on the left and the
-last root on the right, with the chord name beneath it. The lower keyboard
-shows every emitted note across held chords, including voicing and spread.
-Strummed notes light as they sound and disappear when their root is released.
-The lower row expands to fit the full note range, keeping octaves distinct.
-The header retains strum, direction, voicing and spread.
+Voicing moves the lowest note up an octave per positive step, or the highest
+down per negative step. With a single note, each step shifts that note a full
+octave. Defaults are str 0, dir up, voi 0 and spr off.
 
-Requires the SDK note-player interface, version 1.7. Build with this machine's
-folder using `sdk.py build --machine <folder> --stock-os <stock>/os.ldr --out <build>`;
-select **chords** as a track's player. Preserve the build's layout for future
-builds. Firmware without this player loads its saved type as Arpeggio.
+The upper keyboard shows held modifiers on the left, the selected mode and
+the last root on the right. The line beneath shows the mode and that root's
+captured chord, which stays correctly named while preparing other modifiers
+in Simple mode. The bottom keyboard shows all emitted notes across held
+chords, fitting the range across octaves. Queued strum tones stay dark until
+they sound; added extensions appear when emitted.
 
-Defaults are str 0, dir up, voi 0 and spr off.
+## Reference and verification
 
-The chord engine and page logic are [`player.cpp`](player.cpp);
-[`tests/chords.cpp`](tests/chords.cpp) holds their vectors and
-[`panel.svg.fragment`](panel.svg.fragment) the page artwork.
+Behavior follows Telepathic's official
+[Playstyles guide](https://support.telepathicinstruments.com/hc/en-us/articles/15280843614863-What-s-the-Difference-Between-Playstyles),
+[extension guide](https://support.telepathicinstruments.com/hc/en-us/articles/16576229505167-Chord-Extensions-Explained),
+and [Options reference](https://support.telepathicinstruments.com/hc/en-us/articles/15280847893263-Navigating-the-Options-Menu-A-Complete-Overview).
 
-Regenerate the retained artwork with `python artwork.py`.
+These describe press orders and addition modes, but do not fully specify
+extension releases or every Advanced/Free transition. Retaining extensions
+until root release and allowing one chord activation per held root in
+Advanced are explicit implementation choices, not verified Orchid behavior.
+This implements the documented modifier gestures, not complete Orchid firmware
+equivalence. Hardware comparison is still required.
 
-For projects made with the original experimental player PR, pass
-`--layout <this-folder>/legacy-layout.json` on the first updated build. It
-preserves Chords' original player type. After that, pass the resulting build's
-`layout.json`. Fresh builds otherwise assign a new player type by name.
+[tests/gestures.cpp](tests/gestures.cpp) covers types/extensions, both press
+orders, all styles, addition modes, releases, simultaneous roots, octave
+shifts, voicing, strum and display state. The SDK separately tests native
+record updates, capacity, scheduled tones, reset callbacks and stale updates.
+
+## Build
+
+Requires SDK 1.7 with the optional live-update/reset callbacks.
+Build with `sdk.py build --machine <folder> --stock-os <stock>/os.ldr --out <build>`
+and select **chords** as the track's player. Preserve the resulting
+`layout.json` for future builds. Stock firmware loads an unknown saved player
+as Arpeggio.
+
+For the original experimental player PR's projects, use
+`--layout <this-folder>/legacy-layout.json` on the first updated build. This
+preserves player identity, not the earlier modifier-note mapping.
+
+The engine is [player.cpp](player.cpp). Regenerate the retained
+[panel.svg.fragment](panel.svg.fragment) with `python artwork.py`.

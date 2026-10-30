@@ -24,18 +24,18 @@
 <rect x="325.629" y="50" width="19.0286" height="26" fill="#000000" stroke="#000000" stroke-width="1"/>
 <rect x="389.057" y="50" width="19.0286" height="26" fill="#000000" stroke="#000000" stroke-width="1"/>
 <rect x="420.771" y="50" width="19.0286" height="26" fill="#000000" stroke="#000000" stroke-width="1"/>
-<text transform="matrix(1 0 0 1 24.8571 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="13">dim</text>
-<text transform="matrix(1 0 0 1 56.5714 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="13">aug</text>
-<text transform="matrix(1 0 0 1 88.2857 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="13">min</text>
-<text transform="matrix(1 0 0 1 120 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="13">maj</text>
-<text transform="matrix(1 0 0 1 151.714 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="13">sus</text>
-<text transform="matrix(1 0 0 1 183.429 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="13">dom</text>
-<text transform="matrix(1 0 0 1 212.143 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="13">half</text>
-<text transform="matrix(1 0 0 1 46.7143 42)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="13">6</text>
-<text transform="matrix(1 0 0 1 75.4286 42)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="13">m7</text>
-<text transform="matrix(1 0 0 1 107.143 42)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="13">M7</text>
-<text transform="matrix(1 0 0 1 173.571 42)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="13">9</text>
-<text transform="matrix(1 0 0 1 202.286 42)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="13">11</text>
+<text transform="matrix(1 0 0 1 31.3571 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">6</text>
+<text transform="matrix(1 0 0 1 60.5714 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">m7</text>
+<text transform="matrix(1 0 0 1 92.2857 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">M7</text>
+<text transform="matrix(1 0 0 1 126.5 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">9</text>
+<text transform="matrix(1 0 0 1 150.714 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">simp</text>
+<text transform="matrix(1 0 0 1 184.929 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">adv</text>
+<text transform="matrix(1 0 0 1 214.143 110)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">free</text>
+<text transform="matrix(1 0 0 1 42.2143 42)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">dim</text>
+<text transform="matrix(1 0 0 1 73.9286 42)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">min</text>
+<text transform="matrix(1 0 0 1 105.643 42)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">maj</text>
+<text transform="matrix(1 0 0 1 169.071 42)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="11">sus</text>
+<text transform="matrix(1 0 0 1 192.286 42)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="8">add/full</text>
 <path d="M18 119 H237" fill="none" stroke="#B4B4B4" stroke-width="0.5"/>
 <path d="M243 119 H462" fill="none" stroke="#B4B4B4" stroke-width="0.5"/>
 <text transform="matrix(1 0 0 1 18 136)" fill="#D2D2D2" font-family="UniversNextPro-Light" font-size="13">modifier</text>
@@ -64,7 +64,7 @@
 <circle id="chords_dot_21" transform="matrix(1 0 0 1 192.429 84)" cx="0" cy="0" r="4" fill="#000000" stroke="#000000" stroke-width="0.5"/>
 <circle id="chords_dot_22" transform="matrix(1 0 0 1 208.286 67)" cx="0" cy="0" r="4" fill="#F0F0F0" stroke="#F0F0F0" stroke-width="0.5"/>
 <circle id="chords_dot_23" transform="matrix(1 0 0 1 224.143 84)" cx="0" cy="0" r="4" fill="#000000" stroke="#000000" stroke-width="0.5"/>
-<text id="chords_text" transform="matrix(1 0 0 1 240 157)" fill="#F2F2F2" font-family="UniversNextPro-Light" font-size="22">chords</text>
+<text id="chords_text" transform="matrix(1 0 0 1 240 157)" fill="#F2F2F2" font-family="UniversNextPro-Light" font-size="18">simple/add</text>
 <path id="chords_key_0" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
 <path id="chords_key_2" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
 <path id="chords_key_4" transform="matrix(1 0 0 1 1024 174)" d="M0 0 H10 V44 H0 Z" fill="#F0F0F0" stroke="#000000" stroke-width="0.5"/>
