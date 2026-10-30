@@ -148,14 +148,16 @@ void name(Text& out, u32 root, u32 type, u32 extensions) {
 // while it is held cannot leave it stuck.
 bool release(State& state, u32 note) {
     if (note > 127) return true;
+    // An octave shift can make a held root's pitch a modifier (or vice versa)
+    // for a later live/sequenced press. Release both owners of that pitch and
+    // retain the stock note-off whenever a root was sounding.
+    bool root_held = false;
+    for (auto& root : state.roots)
+        if (root.note == note + 1) { root = Root{}; root_held = true; }
     int key = -1;
     for (int k = 0; k < 12; ++k)
         if (state.notes[k] == note + 1) key = k;
-    if (key < 0) {
-        for (auto& root : state.roots)
-            if (root.note == note + 1) root = Root{};
-        return false;
-    }
+    if (key < 0) return false;
     state.notes[key] = 0;
     const int m = kModifier[key];
     if (m >= kDim && m < kTypes) {
@@ -166,7 +168,7 @@ bool release(State& state, u32 note) {
     } else if (m >= kTypes) {
         state.extensions &= static_cast<u8>(~(1u << (m - kTypes)));
     }
-    return true;
+    return !root_held;
 }
 
 void make_plan(State& state, const Controls& controls, const Root& root, Plan& plan) {
@@ -246,14 +248,16 @@ bool press(State& state, const Controls& controls, u32 note, u32 velocity, Plan&
     for (auto& root : state.roots) if (root.note == note + 1) target = &root;
     if (!target) for (auto& root : state.roots) if (!root.note) { target = &root; break; }
     if (!target) return true;  // eight roots are already held
-    *target = Root{static_cast<u8>(note + 1), static_cast<u8>(velocity), state.last,
-                   static_cast<u8>(state.last ? effective_extensions(state.extensions) : 0)};
-    make_plan(state, controls, *target, plan);
+    const Root next = {static_cast<u8>(note + 1), static_cast<u8>(velocity), state.last,
+                      static_cast<u8>(state.last ? effective_extensions(state.extensions) : 0)};
+    make_plan(state, controls, next, plan);
+    // The SDK leaves a sounding root unchanged for an empty plan. Preserve
+    // its ownership and captured name too; a fresh empty root owns no slot.
+    if (!plan.count) return true;
+    *target = next;
     state.root = target->note;
     state.display_type = target->type;
     state.display_extensions = target->extensions;
-    // An entirely out-of-range chord has no stock record to release later.
-    if (!plan.count) *target = Root{};
     return true;
 }
 

@@ -118,8 +118,58 @@ void voicing_timing_and_display() {
     require(mask==((1u<<0)|(1u<<4)|(1u<<7)));
     r.off(C); r.controls.value[2]=top; r.on(120); require(r.plan.count==0);
 }
+void overlapping_roles_after_octave_shift() {
+    // A sounding root later receives a modifier press at the same pitch.
+    Rig r;
+    r.on(66); notes(r.plan,{66});
+    r.controls.lowest_key=65;
+    r.on(66); require(r.plan.count==0 && r.state.held!=0);
+    require(!r.off(66)); // must forward stock note-off, despite modifier ownership
+    require(r.state.held==0 && r.state.notes[1]==0);
+    for (const auto& root : r.state.roots) require(root.note==0);
+    // The opposite order must also clear both owners with one release.
+    r.on(66); require(r.plan.count==0);
+    r.controls.lowest_key=53;
+    r.on(66); notes(r.plan,{66,69,72});
+    require(!r.off(66));
+    require(r.state.held==0 && r.state.notes[1]==0);
+    for (const auto& root : r.state.roots) require(root.note==0);
+    // The same contract holds for extensions, including the unused key.
+    for (u32 key : {65u,67u,69u,71u,72u,74u,75u,76u}) {
+        Rig ext;
+        ext.on(key); require(ext.plan.count==1);
+        ext.controls.lowest_key=65;
+        ext.on(key); require(ext.plan.count==0);
+        require(!ext.off(key));
+        require(ext.state.extensions==0);
+        for (const auto& root : ext.state.roots) require(root.note==0);
+    }
+}
+void empty_retrigger_preserves_sounding_root() {
+    Rig r;
+    r.on(120); notes(r.plan,{120});
+    r.on(Major);
+    r.controls.value[2]=top;
+    r.on(120); require(r.plan.count==0);
+    require(r.state.roots[0].note==121 && r.state.roots[0].type==chords::kNone);
+    Display shown={}; chords::display(r.state,r.controls,shown);
+    require(std::string(shown.text)=="C");
+    r.controls.lowest_key=109;
+    r.on(120); require(r.plan.count==0);
+    require(!r.off(120)); // the original stock record still needs releasing
+    require(r.state.roots[0].note==0 && r.state.extensions==0);
+    Rig full;
+    for (u32 note=100;note<108;++note) full.on(note);
+    full.controls.value[2]=top;
+    full.on(100); require(full.plan.count==0);
+    full.controls.value[2]=centre;
+    full.on(108); require(full.plan.count==0); // empty retrigger freed no stock slot
+    for (u32 i=0;i<8;++i) require(full.state.roots[i].note==101+i);
+}
 }
 int main() {
     base_and_extensions(); simple_only(); extension_combinations(); roots_and_octaves(); voicing_timing_and_display();
+    overlapping_roles_after_octave_shift();
+    empty_retrigger_preserves_sounding_root();
     std::puts("Simple gestures, all seven extensions and combinations, octave shifts, held roots and display passed");
 }
