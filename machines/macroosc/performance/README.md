@@ -1109,3 +1109,23 @@ central3.075990%,conservative3.525061%.
 Still47central/42conservative under3.5. Old hardware calibration only;
 physical cache/all-settings timing and full collection fit remain unproven.
 No firmware,flash,MTP,commit,push. SDK and vendor unchanged. Goal unachieved.
+
+Flute now uses ordinary delay-buffer indices when an entire render chunk fits
+without a read or write crossing either ring boundary. Boundary crossings retain
+the original modulo-addressed loop. Arithmetic, sample order, persistent state,
+FM depth/cadence and rates are unchanged. No new per-voice or shared memory.
+
+Fresh native084:282 original audio hashes, no timing regressions versus083.
+Host094:2,310,144samples identical; sustained Flute:4,194,304samples identical.
+Checks091:25host tests plus preview/ownership/lifecycle/drawing pass.
+All7generators match. Independent address audit:1,536,000steps covering both
+ring lengths, every position, chunk sizes1..24 and uint32 counter-wrap origins.
+Full-FM oscillator cost improves10.742977%;128wide control/pitch cases improve
+10.519869..10.708024%.
+Module069:initialized291412,BSS179304,
+stack504. Flute estimates:
+central2.815698%,conservative3.337265%.
+Now47central/43conservative models below3.5. Old hardware calibration only;
+physical cache and arbitrary-setting costs remain unmeasured. No new firmware,
+device operations, commit or push. SDK and vendor unchanged. Goal unachieved.
+Profiling003 remains pinned to the preceding committed retained078 source.

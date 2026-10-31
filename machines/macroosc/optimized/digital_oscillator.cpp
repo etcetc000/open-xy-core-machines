@@ -1568,6 +1568,186 @@ void DigitalOscillator::RenderFluted(
   // Rolling read indexes equal delay_ptr-delay_integral modulo2^32.
   uint32_t bore_delay_ptr = delay_ptr - bore_delay_integral;
   uint32_t jet_delay_ptr = delay_ptr - jet_delay_integral;
+  // Render chunks contain at most24samples. Within a contiguous span,
+  // modulo addressing equals ordinary indexing, including the previous
+  // byte. Preserve sample/read/write order for overlapping delay spans.
+  // Any boundary crossing uses the original ring-buffer loop.
+  uint32_t read_b=bore_delay_ptr%kWGFBoreLength;
+  uint32_t write_b=delay_ptr%kWGFBoreLength;
+  uint32_t read_j=jet_delay_ptr%kWGJetLength;
+  uint32_t write_j=delay_ptr%kWGJetLength;
+  if((read_b>=1 && read_b+size<=kWGFBoreLength) && (write_b+size<=kWGFBoreLength) && (read_j>=1 && read_j+size<=kWGJetLength) && (write_j+size<=kWGJetLength)) {
+  while (size) {
+    {
+
+
+    int16_t bore_dl_a = dl_b[read_b];
+    int16_t bore_dl_b = dl_b[read_b-1];
+    int16_t jet_dl_a = dl_j[read_j];
+    int16_t jet_dl_b = dl_j[read_j-1];
+    int32_t bore_value = macroosc::mix_byte<9>(bore_dl_a, bore_dl_b, bore_delay_fractional);
+    int32_t jet_value = macroosc::flute_jet_index(jet_dl_a, jet_dl_b, jet_delay_fractional);
+
+    int32_t breath_pressure = lut_blowing_envelope[excitation_ptr];
+    breath_pressure <<= 1;
+    random_state=random_state*1664525u+1013904223u;
+    int32_t random_pressure=macroosc::flute_noise(random_state,breath_multiplier);
+    random_pressure = macroosc::flute_envelope_noise(
+        static_cast<int16_t>(random_pressure), static_cast<int16_t>(breath_pressure >> 1));
+    breath_pressure += random_pressure;
+
+    lp_state = macroosc::flute_body(lp_state,bore_value,filter_multiplier);
+    int32_t reflection = lp_state;
+    dc_blocking_y0 = macroosc::flute_dc(dc_blocking_y0);
+    dc_blocking_y0 += reflection - dc_blocking_x0;
+    dc_blocking_x0 = reflection;
+    reflection = dc_blocking_y0;
+
+    int32_t pressure_delta = breath_pressure - (reflection >> 1);
+    dl_j[write_j++] = pressure_delta >> 9;
+
+    pressure_delta = jet_value;
+    const unsigned jet_table_index = pressure_delta;
+    pressure_delta = static_cast<int16_t>(
+        lut_blowing_jet[jet_table_index]) + (reflection >> 1);
+    dl_b[write_b++] = pressure_delta >> 9;
+    ++delay_ptr; ++read_b; ++read_j;
+
+    int32_t out = bore_value >> 1;
+    if (out < -32767) out = -32767;
+    *buffer++ = out;
+
+
+    }
+    ++excitation_ptr;
+    {
+
+
+    int16_t bore_dl_a = dl_b[read_b];
+    int16_t bore_dl_b = dl_b[read_b-1];
+    int16_t jet_dl_a = dl_j[read_j];
+    int16_t jet_dl_b = dl_j[read_j-1];
+    int32_t bore_value = macroosc::mix_byte<9>(bore_dl_a, bore_dl_b, bore_delay_fractional);
+    int32_t jet_value = macroosc::flute_jet_index(jet_dl_a, jet_dl_b, jet_delay_fractional);
+
+    int32_t breath_pressure = lut_blowing_envelope[excitation_ptr];
+    breath_pressure <<= 1;
+    random_state=random_state*1664525u+1013904223u;
+    int32_t random_pressure=macroosc::flute_noise(random_state,breath_multiplier);
+    random_pressure = macroosc::flute_envelope_noise(
+        static_cast<int16_t>(random_pressure), static_cast<int16_t>(breath_pressure >> 1));
+    breath_pressure += random_pressure;
+
+    lp_state = macroosc::flute_body(lp_state,bore_value,filter_multiplier);
+    int32_t reflection = lp_state;
+    dc_blocking_y0 = macroosc::flute_dc(dc_blocking_y0);
+    dc_blocking_y0 += reflection - dc_blocking_x0;
+    dc_blocking_x0 = reflection;
+    reflection = dc_blocking_y0;
+
+    int32_t pressure_delta = breath_pressure - (reflection >> 1);
+    dl_j[write_j++] = pressure_delta >> 9;
+
+    pressure_delta = jet_value;
+    const unsigned jet_table_index = pressure_delta;
+    pressure_delta = static_cast<int16_t>(
+        lut_blowing_jet[jet_table_index]) + (reflection >> 1);
+    dl_b[write_b++] = pressure_delta >> 9;
+    ++delay_ptr; ++read_b; ++read_j;
+
+    int32_t out = bore_value >> 1;
+    if (out < -32767) out = -32767;
+    *buffer++ = out;
+
+
+    }
+    ++excitation_ptr;
+    {
+
+
+    int16_t bore_dl_a = dl_b[read_b];
+    int16_t bore_dl_b = dl_b[read_b-1];
+    int16_t jet_dl_a = dl_j[read_j];
+    int16_t jet_dl_b = dl_j[read_j-1];
+    int32_t bore_value = macroosc::mix_byte<9>(bore_dl_a, bore_dl_b, bore_delay_fractional);
+    int32_t jet_value = macroosc::flute_jet_index(jet_dl_a, jet_dl_b, jet_delay_fractional);
+
+    int32_t breath_pressure = lut_blowing_envelope[excitation_ptr];
+    breath_pressure <<= 1;
+    random_state=random_state*1664525u+1013904223u;
+    int32_t random_pressure=macroosc::flute_noise(random_state,breath_multiplier);
+    random_pressure = macroosc::flute_envelope_noise(
+        static_cast<int16_t>(random_pressure), static_cast<int16_t>(breath_pressure >> 1));
+    breath_pressure += random_pressure;
+
+    lp_state = macroosc::flute_body(lp_state,bore_value,filter_multiplier);
+    int32_t reflection = lp_state;
+    dc_blocking_y0 = macroosc::flute_dc(dc_blocking_y0);
+    dc_blocking_y0 += reflection - dc_blocking_x0;
+    dc_blocking_x0 = reflection;
+    reflection = dc_blocking_y0;
+
+    int32_t pressure_delta = breath_pressure - (reflection >> 1);
+    dl_j[write_j++] = pressure_delta >> 9;
+
+    pressure_delta = jet_value;
+    const unsigned jet_table_index = pressure_delta;
+    pressure_delta = static_cast<int16_t>(
+        lut_blowing_jet[jet_table_index]) + (reflection >> 1);
+    dl_b[write_b++] = pressure_delta >> 9;
+    ++delay_ptr; ++read_b; ++read_j;
+
+    int32_t out = bore_value >> 1;
+    if (out < -32767) out = -32767;
+    *buffer++ = out;
+
+
+    }
+    ++excitation_ptr;
+    {
+
+
+    int16_t bore_dl_a = dl_b[read_b];
+    int16_t bore_dl_b = dl_b[read_b-1];
+    int16_t jet_dl_a = dl_j[read_j];
+    int16_t jet_dl_b = dl_j[read_j-1];
+    int32_t bore_value = macroosc::mix_byte<9>(bore_dl_a, bore_dl_b, bore_delay_fractional);
+    int32_t jet_value = macroosc::flute_jet_index(jet_dl_a, jet_dl_b, jet_delay_fractional);
+
+    int32_t breath_pressure = lut_blowing_envelope[excitation_ptr];
+    breath_pressure <<= 1;
+    random_state=random_state*1664525u+1013904223u;
+    int32_t random_pressure=macroosc::flute_noise(random_state,breath_multiplier);
+    random_pressure = macroosc::flute_envelope_noise(
+        static_cast<int16_t>(random_pressure), static_cast<int16_t>(breath_pressure >> 1));
+    breath_pressure += random_pressure;
+
+    lp_state = macroosc::flute_body(lp_state,bore_value,filter_multiplier);
+    int32_t reflection = lp_state;
+    dc_blocking_y0 = macroosc::flute_dc(dc_blocking_y0);
+    dc_blocking_y0 += reflection - dc_blocking_x0;
+    dc_blocking_x0 = reflection;
+    reflection = dc_blocking_y0;
+
+    int32_t pressure_delta = breath_pressure - (reflection >> 1);
+    dl_j[write_j++] = pressure_delta >> 9;
+
+    pressure_delta = jet_value;
+    const unsigned jet_table_index = pressure_delta;
+    pressure_delta = static_cast<int16_t>(
+        lut_blowing_jet[jet_table_index]) + (reflection >> 1);
+    dl_b[write_b++] = pressure_delta >> 9;
+    ++delay_ptr; ++read_b; ++read_j;
+
+    int32_t out = bore_value >> 1;
+    if (out < -32767) out = -32767;
+    *buffer++ = out;
+
+
+    }
+    size-=4;
+  }
+  } else {
   while (size) {
     {
 
@@ -1737,6 +1917,7 @@ void DigitalOscillator::RenderFluted(
 
     }
     size-=4;
+  }
   }
   if (excitation_ptr >= LUT_BLOWING_ENVELOPE_SIZE - 32) {
     excitation_ptr = LUT_BLOWING_ENVELOPE_SIZE - 32;
