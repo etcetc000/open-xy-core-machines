@@ -2,6 +2,7 @@
 #include "vendor/braids/resources.cc"
 #include "optimized/packed_tables.cpp"
 #include <cassert>
+#include <cstring>
 #define Svf OriginalSvf
 #define SvfMode OriginalSvfMode
 #define SVF_MODE_LP ORIGINAL_SVF_MODE_LP
@@ -18,6 +19,11 @@ static_assert(sizeof(braids::Svf) == sizeof(braids::OriginalSvf), "Filter layout
 template<braids::SvfMode Mode> void check() {
   braids::OriginalSvf original;
   braids::Svf candidate, local;
+  // Match the adapter's zeroed voice storage. Init marks coefficients dirty;
+  // the first Process/Prepare still has to calculate the original values.
+  std::memset(static_cast<void*>(&original),0,sizeof original);
+  std::memset(static_cast<void*>(&candidate),0,sizeof candidate);
+  std::memset(static_cast<void*>(&local),0,sizeof local);
   original.Init();candidate.Init();local.Init();
   original.set_mode(static_cast<braids::OriginalSvfMode>(Mode));candidate.set_mode(Mode);local.set_mode(Mode);
   unsigned seed=12345;
