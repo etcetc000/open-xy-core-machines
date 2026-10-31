@@ -55,7 +55,7 @@ clears that root's notes. The output row expands to fit the note range.
 
 ## Build and tests
 
-Requires SDK 1.7. Build with
+Requires SDK 1.8. Build with
 `sdk.py build --machine <folder> --stock-os <stock>/os.ldr --out <build>`
 and select **chords** as the track's player. Preserve the resulting
 `layout.json` for future builds. Stock firmware loads an unknown saved player

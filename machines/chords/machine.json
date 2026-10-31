@@ -2,5 +2,5 @@
   "schema": 1,
   "kind": "player",
   "description": "Hold left-hand chord types and extensions, then play right-hand roots. Includes 11, 13 and flat 9 colours.",
-  "sdk": "1.7"
+  "sdk": "1.8"
 }
