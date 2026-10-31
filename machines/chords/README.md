@@ -1,10 +1,10 @@
 # Chords note player
 
-Hold modifiers with your left hand, then press a root with your right hand.
-Each root captures the modifiers held when it is pressed. Changing or releasing
-modifiers affects the next root, not a chord already sounding. Releasing the
-root releases its chord. This Simple behavior is always active; there are no
-play-style or extension-addition mode controls.
+Hold a root with your right hand and shape its chord with the modifiers on
+its left. Either hand can play first. Pressing or releasing any chord type or
+extension regenerates and restrums every held root using the current modifiers.
+Modifiers alone are silent; releasing a root stops its chord. This live behavior
+is always active; there are no play-style or extension-addition mode controls.
 
 At the default keyboard octave:
 
@@ -47,11 +47,18 @@ Voicing moves the lowest note up an octave per positive step, or the highest
 down per negative step. With a single note, each step shifts it a full octave.
 Defaults are str 0, dir up, voi 0 and spr off.
 
-The upper keyboard shows held modifiers on the left and the last root on the
-right. The chord-name line describes that root's captured chord without mode
-labels. The bottom keyboard shows every emitted note across held chords,
-including voicing and spread. Strummed notes light as they sound; root release
-clears that root's notes. The output row expands to fit the note range.
+Voicing moves one value per encoder detent. Changing voicing or spread
+regenerates every held root from the current modifiers and restarts its strum
+on the next player step. Modifier presses and releases also restart the whole
+strum, preserving each root's velocity, even if the selected notes are unchanged.
+Repeated note-ons for an already-held modifier and the unused key do not retrigger. Releasing a root still stops its chord. If a change
+places every tone outside MIDI 0..127, that root keeps its last audible chord and name
+until a valid control or modifier change is requested.
+
+The single keyboard shows held modifiers on the left and the last root on the
+right. Type labels above the black keys and extension labels below the white
+keys alternate between two heights, with guide lines to their keys. The
+chord-name line at the bottom follows the last root's sounding chord.
 
 ## Build and tests
 
@@ -64,7 +71,7 @@ as Arpeggio. For the original experimental player PR's projects, use
 preserves player identity, not the earlier modifier-note mapping.
 
 [tests/gestures.cpp](tests/gestures.cpp) covers every type/extension, all 128
-extension combinations, Simple input/release behavior, capacity, octave shifts,
+extension combinations, live modifier input/release behavior, capacity, octave shifts,
 voicing, strum and captured display state. Run with `sdk.py test --machine <folder>`.
 The engine is [player.cpp](player.cpp). Regenerate
 [panel.svg.fragment](panel.svg.fragment) with `python artwork.py`.

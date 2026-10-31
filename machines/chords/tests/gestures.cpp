@@ -44,23 +44,106 @@ void base_and_extensions() {
     r.on(C); notes(r.plan,{72,76,82,83,85,86,89,93});
     r.off(C); r.off(Major); r.on(C); notes(r.plan,{72});
 }
-void simple_only() {
+void live_modifiers() {
     Rig r;
+    Update u={};
+    Display shown={};
+    r.controls.value[0]=top;
     r.on(C,77); notes(r.plan,{72},77);
-    r.on(Major); require(r.plan.count==0 && r.state.roots[0].type==chords::kNone);
-    r.off(C); r.on(C); notes(r.plan,{72,76,79});
-    r.off(Major); r.on(Minor); r.on(Eleven); r.on(Thirteen); r.on(Flat9);
-    require(r.plan.count==0 && r.state.roots[0].type==chords::kMaj && r.state.roots[0].extensions==0);
-    Display shown={}; chords::display(r.state,r.controls,shown);
-    require(std::string(shown.text)=="C major");
-    r.off(C); r.on(C); notes(r.plan,{72,75,79,85,89,93});
+    r.on(Major); require(r.plan.count==0);
+    require(chords::update(r.state,r.controls,u));
+    require(u.root==C && u.mode==Replace); notes(u.plan,{72,76,79},77);
+    for(u32 i=0;i<u.plan.count;++i) require(u.plan.tones[i].delay==i*63);
+    require(!chords::update(r.state,r.controls,u));
+    r.on(Minor);
+    require(chords::update(r.state,r.controls,u)); notes(u.plan,{72,75,79},77);
+    r.on(Minor7);
+    require(chords::update(r.state,r.controls,u)); notes(u.plan,{72,75,79,82},77);
     chords::display(r.state,r.controls,shown);
-    require(std::string(shown.text)=="C minor add 11 add 13 b9");
-    r.on(Unused); require(r.plan.count==0); require(r.off(Unused));
-    require((shown.lit & (1u<<(12+10)))==0);
-    r.off(Minor); r.off(Eleven); r.off(Thirteen); r.off(Flat9);
-    require(r.state.roots[0].type==chords::kMin);
-    r.off(C); r.on(C); notes(r.plan,{72});
+    require(std::string(shown.text)=="C minor 7");
+    require(r.off(Minor7));
+    require(chords::update(r.state,r.controls,u)); notes(u.plan,{72,75,79},77);
+    require(r.off(Minor)); // most recent remaining held type wins
+    require(chords::update(r.state,r.controls,u)); notes(u.plan,{72,76,79},77);
+    require(r.off(Major));
+    require(chords::update(r.state,r.controls,u)); notes(u.plan,{72},77);
+    chords::display(r.state,r.controls,shown);
+    require(std::string(shown.text)=="C");
+    r.on(Nine); // any real modifier transition restrums, even without a type
+    require(chords::update(r.state,r.controls,u)); notes(u.plan,{72},77);
+    r.on(Nine); require(!chords::update(r.state,r.controls,u)); // duplicate note-on
+    r.on(Unused); require(!chords::update(r.state,r.controls,u));
+    require(r.off(Unused)); require(!chords::update(r.state,r.controls,u));
+    require(r.off(Nine));
+    require(chords::update(r.state,r.controls,u)); notes(u.plan,{72},77);
+    require(!r.off(Nine)); require(!chords::update(r.state,r.controls,u));
+    r.on(Major); require(!r.off(C)); // released roots cannot be revived
+    require(!chords::update(r.state,r.controls,u));
+    r.on(Minor); r.on(Thirteen); require(!chords::update(r.state,r.controls,u));
+    r.on(C); notes(r.plan,{72,75,79,93}); // modifier-first still works
+    require(!chords::update(r.state,r.controls,u)); // no duplicate initial strum
+    r.on(Six); // 13 supersedes 6, but changing 6 still retriggers
+    require(chords::update(r.state,r.controls,u)); notes(u.plan,{72,75,79,93});
+    r.off(Six);
+    require(chords::update(r.state,r.controls,u)); notes(u.plan,{72,75,79,93});
+    chords::reset(r.state);
+    require(!chords::update(r.state,r.controls,u));
+}
+void modifier_updates_cover_all_roots() {
+    Rig r; Update u={};
+    for(u32 i=0;i<8;++i) r.on(65+i,70+i);
+    r.on(Minor);
+    for(u32 i=0;i<8;++i) {
+        require(chords::update(r.state,r.controls,u));
+        require(u.root==65+i);
+        notes(u.plan,{65+int(i),68+int(i),72+int(i)},70+i);
+    }
+    require(!chords::update(r.state,r.controls,u));
+    Display shown={}; chords::display(r.state,r.controls,shown);
+    require(std::string(shown.text)=="C minor");
+    r.on(Minor7); require(!r.off(68));
+    for(u32 i=0;i<8;++i) if(i!=3) {
+        require(chords::update(r.state,r.controls,u));
+        require(u.root==65+i);
+        notes(u.plan,{65+int(i),68+int(i),72+int(i),75+int(i)},70+i);
+    }
+    require(!chords::update(r.state,r.controls,u));
+    r.controls.lowest_key=65;
+    r.on(66); // same pitch as an existing root, now a Dim modifier
+    require(!r.off(66)); // clears both owners, and forwards the root's release
+    for(u32 i=0;i<8;++i) if(i!=1 && i!=3) {
+        require(chords::update(r.state,r.controls,u)); require(u.root==65+i);
+    }
+    require(!chords::update(r.state,r.controls,u));
+}
+void modifier_edges() {
+    const int keys[]={Six,Minor7,Major7,Nine,Eleven,Thirteen,Flat9};
+    const int intervals[]={9,10,11,14,17,21,13};
+    Update u={};
+    for(unsigned i=0;i<7;++i) {
+        Rig r; r.on(Major); r.on(C);
+        r.on(keys[i]); require(chords::update(r.state,r.controls,u));
+        notes(u.plan,{72,76,79,72+intervals[i]});
+        require(!chords::update(r.state,r.controls,u));
+        r.off(keys[i]); require(chords::update(r.state,r.controls,u));
+        notes(u.plan,{72,76,79});
+        require(!chords::update(r.state,r.controls,u));
+    }
+    Rig r; r.on(Major); r.on(Minor); r.on(C);
+    r.off(Major); // even releasing a non-winning type is a real modifier change
+    require(chords::update(r.state,r.controls,u)); notes(u.plan,{72,75,79});
+    r.controls.value[2]=top;
+    require(chords::update(r.state,r.controls,u));
+    r.off(C); r.on(100); notes(r.plan,{124,127});
+    r.off(Minor); // single-note +6 octaves is out of range: keep the audible chord
+    require(!chords::update(r.state,r.controls,u));
+    Display d={}; chords::display(r.state,r.controls,d);
+    require(std::string(d.text)=="E minor");
+    r.on(Major); // valid modifier change recovers without moving the encoder
+    require(chords::update(r.state,r.controls,u)); notes(u.plan,{124});
+    chords::display(r.state,r.controls,d);
+    require(std::string(d.text)=="E major");
+    r.off(100); require(!chords::update(r.state,r.controls,u));
 }
 void extension_combinations() {
     const int keys[]={Six,Minor7,Major7,Nine,Eleven,Thirteen,Flat9};
@@ -167,9 +250,49 @@ void empty_retrigger_preserves_sounding_root() {
     for (u32 i=0;i<8;++i) require(full.state.roots[i].note==101+i);
 }
 }
+void held_controls_retrigger_chords() {
+    Rig r; r.on(Minor); r.on(Minor7); r.on(C,77); r.on(C+2,83);
+    Update u={}; require(!chords::update(r.state,r.controls,u));
+    r.controls.value[0]=top;
+    require(!chords::update(r.state,r.controls,u)); // strum alone does not retrigger
+    r.controls.value[2]=static_cast<i32>((0x7fffffffu/13)*7+0x7fffffffu/26);
+    require(chords::update(r.state,r.controls,u));
+    require(u.root==C && u.mode==Replace); notes(u.plan,{75,79,82,84},77);
+    for(u32 i=0;i<u.plan.count;++i) require(u.plan.tones[i].delay==i*63);
+    require(chords::update(r.state,r.controls,u));
+    require(u.root==C+2); notes(u.plan,{77,81,84,86},83);
+    require(!chords::update(r.state,r.controls,u));
+    r.controls.value[3]=top;
+    r.off(C+2); // a release between the turn and step must never restart this root
+    require(chords::update(r.state,r.controls,u));
+    require(u.root==C); notes(u.plan,{75,82,91,96},77);
+    require(!chords::update(r.state,r.controls,u));
+    r.controls.value[3]=0;
+    require(chords::update(r.state,r.controls,u)); notes(u.plan,{75,79,82,84},77);
+    Display d={}; chords::display(r.state,r.controls,d);
+    require(std::string(d.text)=="D minor 7");
+    r.off(C); r.controls.value[2]=0;
+    require(!chords::update(r.state,r.controls,u));
+
+    Rig full; full.on(Major);
+    for(u32 note=65; note<73; ++note) full.on(note);
+    full.controls.value[3]=top;
+    for(u32 note=65; note<73; ++note) {
+        require(chords::update(full.state,full.controls,u)); require(u.root==note && u.plan.count==3);
+    }
+    require(!chords::update(full.state,full.controls,u));
+    chords::reset(full.state); full.controls.value[3]=0;
+    require(!chords::update(full.state,full.controls,u));
+
+    Rig edge; edge.on(120); edge.controls.value[2]=top;
+    require(!chords::update(edge.state,edge.controls,u)); // keep last audible voicing
+    edge.controls.value[2]=centre;
+    require(chords::update(edge.state,edge.controls,u)); notes(u.plan,{120});
+}
 int main() {
-    base_and_extensions(); simple_only(); extension_combinations(); roots_and_octaves(); voicing_timing_and_display();
+    base_and_extensions(); live_modifiers(); modifier_updates_cover_all_roots(); modifier_edges(); extension_combinations(); roots_and_octaves(); voicing_timing_and_display();
     overlapping_roles_after_octave_shift();
     empty_retrigger_preserves_sounding_root();
-    std::puts("Simple gestures, all seven extensions and combinations, octave shifts, held roots and display passed");
+    held_controls_retrigger_chords();
+    std::puts("Live modifier gestures, all seven extensions and combinations, octave shifts, held roots and display passed");
 }

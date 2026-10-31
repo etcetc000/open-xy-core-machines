@@ -22,6 +22,8 @@ enum Type : u8 { kNone, kDim, kMin, kMaj, kSus, kTypes };
 const u32 kExtensionCount = 7;
 struct Root {
     u8 note, velocity, type, extensions;  // note + 1; zero is an empty slot
+    u8 voicing, spread;  // the last requested control buckets for this root
+    u8 modifiers_changed;
 };
 
 struct State {
@@ -53,6 +55,11 @@ u8 effective_extensions(u8 extensions) {
     // 6 and 13 are the same pitch class; prefer the higher register when both
     // are requested. This leaves room for more distinct chord colours.
     return extensions & 32 ? static_cast<u8>(extensions & ~1u) : extensions;
+}
+
+void modifiers_changed(State& state) {
+    for (auto& root : state.roots)
+        if (root.note) root.modifiers_changed = 1;
 }
 
 // The modifier key (0..11 from F) a note plays, or -1 for a root.
@@ -168,6 +175,7 @@ bool release(State& state, u32 note) {
     } else if (m >= kTypes) {
         state.extensions &= static_cast<u8>(~(1u << (m - kTypes)));
     }
+    if (m) modifiers_changed(state);
     return !root_held;
 }
 
@@ -242,6 +250,7 @@ bool press(State& state, const Controls& controls, u32 note, u32 velocity, Plan&
             const u8 bit = static_cast<u8>(1u << (m - kTypes));
             state.extensions |= bit;
         }
+        if (m) modifiers_changed(state);
         return true;
     }
     Root* target = nullptr;
@@ -249,7 +258,9 @@ bool press(State& state, const Controls& controls, u32 note, u32 velocity, Plan&
     if (!target) for (auto& root : state.roots) if (!root.note) { target = &root; break; }
     if (!target) return true;  // eight roots are already held
     const Root next = {static_cast<u8>(note + 1), static_cast<u8>(velocity), state.last,
-                      static_cast<u8>(state.last ? effective_extensions(state.extensions) : 0)};
+                      static_cast<u8>(state.last ? effective_extensions(state.extensions) : 0),
+                      static_cast<u8>(steps(controls.value[2], 2 * kVoicingSteps + 1)),
+                      static_cast<u8>(steps(controls.value[3], 2)), 0};
     make_plan(state, controls, next, plan);
     // The SDK leaves a sounding root unchanged for an empty plan. Preserve
     // its ownership and captured name too; a fresh empty root owns no slot.
@@ -259,6 +270,37 @@ bool press(State& state, const Controls& controls, u32 note, u32 velocity, Plan&
     state.display_type = target->type;
     state.display_extensions = target->extensions;
     return true;
+}
+
+// Modifier presses/releases and voicing/spread changes retrigger every held
+// root. The SDK drains at most eight replacements after input events and
+// before stock's next player step, restarting each strum.
+bool update(State& state, const Controls& controls, opxy::player::Update& change) {
+    const u8 voicing = static_cast<u8>(steps(controls.value[2], 2 * kVoicingSteps + 1));
+    const u8 spread = static_cast<u8>(steps(controls.value[3], 2));
+    for (auto& root : state.roots) {
+        if (!root.note || (!root.modifiers_changed && root.voicing == voicing && root.spread == spread)) continue;
+        root.voicing = voicing;
+        root.spread = spread;
+        root.modifiers_changed = 0;
+        Root next = root;
+        next.type = state.last;
+        next.extensions = state.last ? effective_extensions(state.extensions) : 0;
+        change.root = root.note - 1;
+        change.mode = opxy::player::Replace;
+        make_plan(state, controls, next, change.plan);
+        // As with an empty root retrigger, retain the last audible voicing if
+        // every requested tone falls outside MIDI. A later valid turn retries.
+        if (change.plan.count) {
+            root = next;
+            if (state.root == root.note) {
+                state.display_type = root.type;
+                state.display_extensions = root.extensions;
+            }
+            return true;
+        }
+    }
+    return false;
 }
 
 void reset(State& state) {

@@ -34,11 +34,24 @@
       "label": "Voi",
       "default": 0.5,
       "mapping": {
-        "kind": "linear",
-        "minimum": -6,
-        "maximum": 6
+        "kind": "enum",
+        "labels": [
+          "-6",
+          "-5",
+          "-4",
+          "-3",
+          "-2",
+          "-1",
+          "0",
+          "+1",
+          "+2",
+          "+3",
+          "+4",
+          "+5",
+          "+6"
+        ]
       },
-      "display": "bipolar"
+      "display": "enum"
     },
     {
       "id": "spread",
