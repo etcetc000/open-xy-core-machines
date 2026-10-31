@@ -12,7 +12,8 @@ int main() {
   braids::AnalogOscillator ref[2]={}, fused[2]={};
   // Braids' empty constructor/Init leave some history members untouched.
   // The adapter zeroes voice storage before construction; reproduce that here.
-  std::memset(ref,0,sizeof(ref));std::memset(fused,0,sizeof(fused));
+  std::memset(static_cast<void*>(ref),0,sizeof(ref));
+  std::memset(static_cast<void*>(fused),0,sizeof(fused));
   for (unsigned i=0;i<2;++i) {ref[i].Init();fused[i].Init();}
   uint8_t sync[24]={};
   int16_t a[24],b[24],actual[24];
@@ -52,7 +53,8 @@ int main() {
   }
   // Exercise every gain control with a ramp followed by an unchanged block,
   // covering the constant-control path as well as transitions into it.
-  std::memset(ref,0,sizeof(ref));std::memset(fused,0,sizeof(fused));
+  std::memset(static_cast<void*>(ref),0,sizeof(ref));
+  std::memset(static_cast<void*>(fused),0,sizeof(fused));
   for(unsigned i=0;i<2;++i) {ref[i].Init();fused[i].Init();}
   previous_balance=0;
   const int balances[]={0,8192,16384,32767};

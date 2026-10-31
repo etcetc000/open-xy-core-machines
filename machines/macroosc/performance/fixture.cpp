@@ -10,7 +10,8 @@ unsigned model,scenario;
 const uint32_t increments[]={6369993u,25479972u,101919888u,407679552u};
 }
 extern "C" void macro_prepare(unsigned chosen,unsigned mode){
-  std::memset(&voice,0,sizeof voice);std::memset(&shared,0,sizeof shared);
+  std::memset(static_cast<void*>(&voice),0,sizeof voice);
+  std::memset(static_cast<void*>(&shared),0,sizeof shared);
   macroosc::initialize(voice,shared,1);macroosc::start(voice,shared,1);
   model=chosen;scenario=mode;
 }

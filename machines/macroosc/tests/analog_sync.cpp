@@ -10,8 +10,9 @@
 // including pulse/saw switching and independently changing master/slave pitch.
 int main() {
   braids::AnalogOscillator reference[2],candidate[2];
-  std::memset(reference,0,sizeof(reference));
-  std::memset(candidate,0,sizeof(candidate));
+  // Match the adapter's intentionally zeroed storage before Braids Init().
+  std::memset(static_cast<void*>(reference),0,sizeof(reference));
+  std::memset(static_cast<void*>(candidate),0,sizeof(candidate));
   for(unsigned i=0;i<2;++i){reference[i].Init();candidate[i].Init();}
   uint8_t silent[24]={},expected_sync[24],actual_sync[24];
   int16_t expected[24],actual[24];
