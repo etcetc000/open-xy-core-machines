@@ -48,8 +48,8 @@ SDK's control-swept CPU record required for a catalog release. Run the current
 SDK hardware sweep, including the combined heaviest control positions, before
 publishing a release record. Several models still exceed the recommended 3.5%.
 
-Build 003 used the DSP from commit
-`2f2050d1e4e2b59b18b628ecb53a3ae57ba8d3f5`. The user confirmed that package was
+Build 003 used the DSP preserved in the Macro Osc subtree of commit
+`47aeed5846ed0d72b4d27b99ac8ce13fdede34e6`. The user confirmed that package was
 installed; the MIDI identity does not attest the firmware hash. The package's
 legacy profiler and 22-machine layout differ from a standalone current-SDK
 build. Its private firmware reservation changes are not part of these sources.
