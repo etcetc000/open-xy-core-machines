@@ -5,6 +5,8 @@
 #include "fm.h"
 #include "lofi.h"
 #include "pitch.h"
+#include "optimized/normalization.hpp"
+#include "optimized/packed_tables.hpp"
 #include "stmlib/utils/dsp.h"
 #include "stmlib/utils/random.h"
 
@@ -12,6 +14,14 @@ namespace stmlib {
 uint32_t Random::rng_state_;
 }
 namespace macroosc {
+// Exact packed-sine interpolation through the SDK's fractional multiply;
+// the scaled slope cannot overflow or trigger multiply saturation.
+inline int16_t ModulatorSine(uint32_t phase) {
+  const uint32_t pair=sine_pairs[phase>>24];
+  const int32_t base=static_cast<int16_t>(pair);
+  const int32_t slope=static_cast<int32_t>(pair)>>16;
+  return base+opxy::q31::multiply(slope*32768,static_cast<int32_t>((phase>>8)&65535));
+}
 using braids::MacroOscillator;
 using braids::MacroOscillatorShape;
 const unsigned kNumShapes = 47, kBlockSize = 64, kMaxChunk = 24;
@@ -21,6 +31,10 @@ const uint8_t kNoSync[kMaxChunk] = {};
 // about F4. Each extra Braids render call costs per-call setup, so FM renders
 // cost more than unmodulated ones.
 const unsigned kFmChunk = 8;
+static_assert(kBlockSize % 4 == 0 && kMaxChunk % 4 == 0 && kFmChunk % 4 == 0,
+              "Flute and FOF exact loops require four-sample groups");
+static_assert(kMaxChunk <= 24 && kFmChunk <= 24,
+              "Staged oscillator scratch space holds at most 24 samples");
 // Output level per int16 Braids sample (32768 would be half-scale Q31): -6.8 dB
 // from half scale, so stock volume readouts match stock instruments and 2op FM.
 // The declared output peak in definition.json is 32768 * kOutputLevel.
@@ -65,11 +79,9 @@ static int32_t PitchFromIncrement(uint32_t increment) {
   if (increment == 0) {
     return 0;
   }
-  uint32_t exponent = 31;
-  while (!(increment & 0x80000000UL)) {
-    increment <<= 1;
-    --exponent;
-  }
+  const unsigned shift = normalization_shift(increment);
+  const uint32_t exponent = 31 - shift;
+  increment <<= shift;
   uint32_t index = (increment >> 23) & 0xff;
   uint32_t fraction = (increment >> 15) & 0xff;
   uint32_t a = braids::kOpxyLog2Q16[index];
@@ -102,9 +114,14 @@ inline int32_t ClampPitch(int32_t pitch) {
 
 // Bits and Rate, as the module applies them to its rendered block: every
 // `step` (Q16) of a sample, hold the next sample with its low bits cleared.
-// At 16 bits and every sample the block is left as it is.
-inline void Reduce(Voice& voice, int16_t* block, size_t size, int16_t mask, uint32_t step) {
+// Write reduced samples directly to the scaled output, avoiding an intermediate
+// buffer pass. At 16 bits and every sample, preserve the hold state as before.
+inline void WriteOutput(Voice& voice, const int16_t* block, opxy::Output out,
+                        size_t size, int16_t mask, uint32_t step) {
   if (mask == -1 && step == 65536) {
+    for (size_t i = 0; i < size; ++i) {
+      out[i] = static_cast<int32_t>(block[i]) * kOutputLevel;
+    }
     return;
   }
   for (size_t i = 0; i < size; ++i) {
@@ -113,7 +130,7 @@ inline void Reduce(Voice& voice, int16_t* block, size_t size, int16_t mask, uint
       voice.hold_phase -= 65536;
       voice.held = block[i] & mask;
     }
-    block[i] = static_cast<int16_t>(voice.held);
+    out[i] = static_cast<int32_t>(static_cast<int16_t>(voice.held)) * kOutputLevel;
   }
 }
 
@@ -133,7 +150,9 @@ void render(Voice& voice, Shared& state, opxy::u32 owner, opxy::Output out,
             opxy::Parameters parameters, opxy::Pitch pitch_increments) {
   MacroOscillator* osc = &voice.osc;
   MacroOscillatorShape shape = ShapeFromParameter(parameters[0]);
-  const uint32_t depth = Unipolar15(parameters[4]) / DepthDivisor(shape);
+  const uint32_t raw_depth = Unipolar15(parameters[4]);
+  const uint32_t divisor = DepthDivisor(shape);
+  const uint32_t depth = raw_depth == 0 || divisor == 1 ? raw_depth : raw_depth / divisor;
   osc->set_parameters(Unipolar15(parameters[1]), Unipolar15(parameters[2]));
 
   bool changed = shape != osc->shape();
@@ -167,14 +186,19 @@ void render(Voice& voice, Shared& state, opxy::u32 owner, opxy::Output out,
   const int32_t drift = Drift(voice, Unipolar15(parameters[7]));
   int16_t block[kMaxChunk];
   if (depth == 0) {
+    // Preserve the existing update positions and Braids render calls. Most
+    // pitch blocks are constant; their log conversion need only run once.
+    uint32_t previous_increment = 0;
+    int32_t converted_pitch = 0;
     for (size_t offset = 0; offset < kBlockSize; offset += kMaxChunk) {
       size_t size = kBlockSize - offset < kMaxChunk ? kBlockSize - offset : kMaxChunk;
-      osc->set_pitch(ClampPitch(PitchFromIncrement(pitch_increments[offset]) + drift));
-      osc->Render(kNoSync, block, size);
-      Reduce(voice, block, size, mask, step);
-      for (size_t i = 0; i < size; ++i) {
-        out[offset + i] = static_cast<int32_t>(block[i]) * kOutputLevel;
+      if (pitch_increments[offset] != previous_increment) {
+        previous_increment = pitch_increments[offset];
+        converted_pitch = PitchFromIncrement(previous_increment);
       }
+      osc->set_pitch(ClampPitch(converted_pitch + drift));
+      osc->Render(kNoSync, block, size);
+      WriteOutput(voice, block, out + offset, size, mask, step);
     }
   } else {
     // Linear FM: at full depth the carrier frequency swings between zero and
@@ -184,15 +208,12 @@ void render(Voice& voice, Shared& state, opxy::u32 owner, opxy::Output out,
     for (size_t offset = 0; offset < kBlockSize; offset += chunk) {
       const size_t size = kBlockSize - offset < chunk ? kBlockSize - offset : chunk;
       const uint32_t increment = pitch_increments[offset] < 0x80000000u ? pitch_increments[offset] : 0x7fffffffu;
-      const int32_t swing = (static_cast<int32_t>(depth) * stmlib::Interpolate824(braids::wav_sine, voice.fm_phase)) >> 15;
+      const int32_t swing = (static_cast<int32_t>(depth) * ModulatorSine(voice.fm_phase)) >> 15;
       const uint32_t carrier = increment + static_cast<uint32_t>(static_cast<int32_t>(increment >> 15) * swing);
       voice.fm_phase += RatioIncrement(increment, ratio) * static_cast<uint32_t>(size);
       osc->set_pitch(ClampPitch(PitchFromIncrement(carrier) + drift));
       osc->Render(kNoSync, block, size);
-      Reduce(voice, block, size, mask, step);
-      for (size_t i = 0; i < size; ++i) {
-        out[offset + i] = static_cast<int32_t>(block[i]) * kOutputLevel;
-      }
+      WriteOutput(voice, block, out + offset, size, mask, step);
     }
   }
   voice.rng_state = stmlib::Random::state();
