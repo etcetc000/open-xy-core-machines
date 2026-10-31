@@ -4,8 +4,8 @@ Timestretch plays samples in time with the project, either by repitching or
 with pitch-preserving, Capicola-derived timestretch. It forks the
 stock drum sampler (`"base": "drumSampler"`): each pad has its own sample and settings.
 
-Requires SDK 1.6 or later for saved BPM/bar memory and pad editing. New saved
-settings cannot be read by firmware built with an older SDK.
+Requires SDK 1.7 or later for tempo-aware lazy chop. Saved BPM/bar memory uses
+the 18-bit settings format introduced in SDK 1.6; older firmware cannot read it.
 
 ## Playing it
 
@@ -46,6 +46,18 @@ settings cannot be read by firmware built with an older SDK.
   Timestretch also preserves trim, tuning, reverse and volume. Pasting from
   another engine uses Timestretch's default loop/play, mode and length;
   pasting into a stock sampler clears Timestretch's private settings.
+  Lazy chop auditions the source once, forwards, at the current playback speed.
+  Taps use the same tempo and pitch clock: a 99 BPM source at 50 master BPM
+  advances through the waveform at 50/99 speed in repitch mode with zero pitch.
+  The audition freezes its source bounds, controls and tempo when it starts;
+  later edits apply on the next audition. Project transpose and keyboard routing
+  do not substitute another source pad.
+  Wait for analysis to finish before chopping in timestretch mode to hear the
+  whole source. If analysis is still loading, the audition advances silently
+  and resumes at the matching source position when ready; it does not restart
+  behind the tap clock.
+  Each new note starts at its start marker (or end when reversed), including
+  loop mode while the sequencer runs; project tempo still controls playback speed.
 - **Edit multiple.** Hold a musical key and press M4, then select the pads to
   edit. Pitch, loop/play, source BPM or length, and repitch/timestretch use the
   same controls as single-pad editing, including encoder clicks. Each selected
@@ -74,7 +86,7 @@ settings cannot be read by firmware built with an older SDK.
 [`sample.cpp`](sample.cpp) renders through the
 [sample engine API](https://github.com/etcetc000/open-xy/blob/staging/docs/api.md#sample-engines). `definition.json`
 declares stereo output, same-key choke, pad settings with drum controls, and a
-2 MiB analysis budget.
+2 MiB analysis budget. `sliceTiming` reports the source-frame clock used by lazy chop.
 
 - [`controls.h`](controls.h) packs loop/play, mode and BPM-or-length into the
   pad settings, and implements `sample_defaults`, `sample_assign`,

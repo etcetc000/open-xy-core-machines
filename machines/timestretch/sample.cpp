@@ -4,11 +4,14 @@
 
 namespace timestretch {
 void render_sample(Voice& voice, const opxy::SampleBlock& block) {
+    voice.slicing = block.slicing;
     const EffectiveControls effective = effective_controls(block.settings, block.parameters);
-    const Controls c = effective.pad;
+    Controls c = effective.pad;
+    if (block.slicing) c.once = true;
     const int saved_pitch = block.region.pitch_cents;
     voice.pitch = block.track_transpose < -36 ? -36 : block.track_transpose > 36 ? 36 : block.track_transpose;
-    voice.pitch += block.drum_transpose < -48 ? -48 : block.drum_transpose > 48 ? 48 : block.drum_transpose;
+    if (!block.slicing)
+        voice.pitch += block.drum_transpose < -48 ? -48 : block.drum_transpose > 48 ? 48 : block.drum_transpose;
     voice.live_pitch_cents = (saved_pitch < -1200 ? -1200 : saved_pitch > 1200 ? 1200 : saved_pitch) +
                              effective.pitch_cents;
     if (voice.play_once != c.once) { voice.play_once = c.once; voice.finished = false; voice.sync_pending = true; }
@@ -16,7 +19,10 @@ void render_sample(Voice& voice, const opxy::SampleBlock& block) {
     const opxy::i32 parameters[2] = {opxy::i32(c.length * 0x15555555u + 0x0aaaaaaau),
                                     c.stretch ? 0x7fffffff : 0};
     bind_analysis(voice, block.analysis);
-    region(voice, live_marker(block.region.begin, voice.sample.frames, live_parameter(block.parameters, 1)),
+    // A tap audition traverses its frozen source bounds once, forwards. The
+    // editor's subsequent cuts and live trims must not move this source.
+    if (block.slicing) region(voice, block.region.begin, block.region.end, false);
+    else region(voice, live_marker(block.region.begin, voice.sample.frames, live_parameter(block.parameters, 1)),
         live_marker(block.region.end, voice.sample.frames, live_parameter(block.parameters, 2)),
         live_mode(live_parameter(block.parameters, 4), block.region.reverse));
     const opxy::u32 channels = block.output_channels == 2 ? 2 : 1;
@@ -55,6 +61,49 @@ TimeStep source_advance(opxy::u32 frames, opxy::u32 shift, opxy::u32 rate,
     }
     return TimeStep{(((numerator / denominator) % frames) << shift) | fraction, remainder, denominator, numerator / denominator};
 }
+struct PhaseAdvance { opxy::u32 whole, fraction; };
+// Keep the complete advance until after pitch scaling. Both rendering and the
+// slicer's clock need these exact two outcomes of the tempo remainder carry.
+PhaseAdvance phase_advance(const TimeStep& step, opxy::u32 shift, opxy::u32 tuning,
+                           bool stretching, opxy::u32 carry) {
+    const opxy::u32 unit = 1u << shift;
+    opxy::u32 fraction = (step.value & (unit - 1)) + carry;
+    opxy::u32 whole = step.whole;
+    if (fraction >= unit) { fraction -= unit; ++whole; }
+    if (!stretching) {
+        const opxy::u32 tuned = whole * tuning;
+        const opxy::u32 remainder = tuned & 4095;
+        opxy::u32 fractional_whole;
+        const opxy::u32 scaled = scale_pitch_fraction(fraction, tuning, shift, fractional_whole);
+        const opxy::u32 residual = shift >= 12 ? remainder << (shift - 12) : remainder >> (12 - shift);
+        whole = (tuned >> 12) + fractional_whole;
+        fraction = scaled;
+        if (fraction >= unit - residual) { fraction -= unit - residual; ++whole; }
+        else fraction += residual;
+    }
+    return PhaseAdvance{whole, fraction};
+}
+// Round a phase increment to a bounded fixed-point source-frame rate.
+opxy::u32 fixed_advance(const PhaseAdvance& advance, opxy::u32 phase_shift, opxy::u32 clock_shift) {
+    const opxy::u32 fraction = phase_shift <= clock_shift ? advance.fraction << (clock_shift - phase_shift) :
+        (advance.fraction + (1u << (phase_shift - clock_shift - 1u))) >> (phase_shift - clock_shift);
+    return (advance.whole << clock_shift) + fraction;
+}
+// round(a * b / denominator), with b < denominator. The remainder never
+// exceeds twice the bounded tempo denominator; no wide runtime arithmetic.
+opxy::u32 weighted_advance(opxy::u32 a, opxy::u32 b, opxy::u32 denominator) {
+    opxy::u32 quotient = 0, remainder = 0;
+    for (opxy::u32 bit = 32; bit; --bit) {
+        quotient <<= 1;
+        remainder <<= 1;
+        if (remainder >= denominator) { remainder -= denominator; ++quotient; }
+        if ((a >> (bit - 1)) & 1u) {
+            remainder += b;
+            if (remainder >= denominator) { remainder -= denominator; ++quotient; }
+        }
+    }
+    return quotient + (remainder >= (denominator + 1u) / 2u ? 1u : 0u);
+}
 }
 
 opxy::u32 beats(opxy::i32 parameter) {
@@ -66,6 +115,53 @@ opxy::u32 beats(opxy::i32 parameter) {
 // beats <= 32: the product is at most 846,720,000 < 2^32; bpm_x10 >= 200.
 opxy::u32 duration(opxy::u32 beats, opxy::u32 bpm_x10) {
     return beats * kSamplesPerMinuteX10 / bpm_x10;
+}
+
+// The tap editor and audition use the same frozen tempo, controls and source
+// bounds. Unity pitch retains the exact tempo fraction. Repitch uses the
+// render's two quantized increments and their carry frequency, rounded to at
+// least 20 fractional bits. Pitch-preserving stretch keeps the tempo clock.
+void slice_clock(const opxy::SampleSlice& input, opxy::SampleSliceRate& out) {
+    out = opxy::SampleSliceRate{};
+    const opxy::u32 begin = input.region.begin < input.frames ? input.region.begin : input.frames;
+    const opxy::u32 end = input.region.end < input.frames ? input.region.end : input.frames;
+    if (end <= begin || end - begin < 2 || input.frames > stretch::kMaxFrames ||
+        input.rate < 8000 || input.rate > 192000) return;
+    const EffectiveControls effective = effective_controls(input.settings, input.parameters);
+    const Controls c = effective.pad;
+    const opxy::u32 tempo = input.bpm_x10 >= 200 && input.bpm_x10 <= 3000 ?
+        input.bpm_x10 : kFallbackBpmX10;
+    if (c.bpm_x10) {
+        out.numerator = input.rate * tempo;
+        out.denominator = 44100u * c.bpm_x10;
+    } else {
+        out.numerator = end - begin;
+        out.denominator = duration(kBeats[c.length], tempo);
+    }
+    const int transpose = input.track_transpose < -36 ? -36 :
+        input.track_transpose > 36 ? 36 : input.track_transpose;
+    const int saved = input.region.pitch_cents < -1200 ? -1200 :
+        input.region.pitch_cents > 1200 ? 1200 : input.region.pitch_cents;
+    out.tuning = c.stretch ? 4096u : pitch_ratio_cents(transpose * 100 + saved + effective.pitch_cents);
+    if (out.tuning != 4096u) {
+        const opxy::u32 frames = end - begin;
+        const opxy::u32 shift = fraction_shift(frames);
+        const opxy::u32 loop = frames << shift;
+        const TimeStep step = c.bpm_x10 ? source_advance(frames, shift, input.rate, c.bpm_x10, tempo) :
+            TimeStep{loop / out.denominator, loop % out.denominator, out.denominator,
+                     (loop / out.denominator) >> shift};
+        const PhaseAdvance plain = phase_advance(step, shift, out.tuning, false, 0);
+        const PhaseAdvance carried = phase_advance(step, shift, out.tuning, false, 1);
+        // At least 20 fractional bits cover the fastest supported audition;
+        // slower rates retain up to 30 so very short/slow sources stay positive.
+        opxy::u32 clock_shift = 20;
+        while (clock_shift < 30 && carried.whole < (0xffffffffu >> (clock_shift + 1u))) ++clock_shift;
+        const opxy::u32 a = fixed_advance(plain, shift, clock_shift);
+        const opxy::u32 b = fixed_advance(carried, shift, clock_shift);
+        out.numerator = a + weighted_advance(b - a, step.remainder, step.divisor);
+        out.denominator = 1u << clock_shift;
+        out.tuning = 4096u;
+    }
 }
 
 // (ticks % span) < 3072 and frames < 2^20, so the product fits 32 bits.
@@ -117,6 +213,7 @@ void initialize(Voice& voice, const opxy::SampleView& sample) {
     voice.sample = sample;
     voice.shift = fraction_shift(sample.frames);
     voice.sync_pending = true;
+    voice.start_pending = true;
     voice.region_end = sample.frames;
 }
 
@@ -124,7 +221,10 @@ void bind_analysis(Voice& voice, const opxy::SampleAnalysis* analysis) {
     if (voice.analysis == analysis) return;
     voice.analysis = analysis;
     voice.ranks_valid = false;
-    if (voice.stretching) voice.sync_pending = true;
+    voice.grains_ready = false;
+    // A tap clock starts with the audition note. Analysis arriving later must
+    // seed grains at its elapsed source position, without restarting that clock.
+    if (voice.stretching && !voice.slicing) voice.sync_pending = true;
 }
 
 void region(Voice& voice, opxy::u32 begin, opxy::u32 end, bool reverse) {
@@ -146,6 +246,7 @@ void start(Voice& voice) {
     voice.position = 0;
     voice.finished = false;
     voice.sync_pending = true;
+    voice.start_pending = true;
 }
 
 void gain(opxy::i32* output, opxy::u32 value, opxy::u32 channels) {
@@ -189,14 +290,15 @@ void render(Voice& voice, opxy::i32* output, const opxy::i32* parameters, const 
     stretch::Analysis view{}, right_view{};
     const stretch::Analysis* analysis = nullptr;
     if (voice.analysis && from_sdk(*voice.analysis, view, right_view)) analysis = &view;
-    if (stretching && !stretch::matches(analysis, voice.sample)) {
+    const bool stretch_ready = stretching && stretch::matches(analysis, voice.sample);
+    if (stretching && !stretch_ready && !voice.slicing) {
         for (unsigned i = 0; i < kBlock * channels; ++i) output[i] = 0;
         voice.sync_pending = true;
         return;
     }
     stretch::Source source{voice.sample, voice.region_begin, frames, shift, loop, voice.reverse, analysis, 0, 0};
     const bool stereo = voice.sample.channels == 2;
-    if (stretching) {
+    if (stretch_ready) {
         // Use the more active channel for timing; both PCM channels retain
         // their original order and share playhead positions and crossfades.
         if (stereo && analysis->right->activity > analysis->activity)
@@ -211,7 +313,7 @@ void render(Voice& voice, opxy::i32* output, const opxy::i32* parameters, const 
     }
     if (stretching != voice.stretching) {
         voice.stretching = stretching;
-        if (stretching) stretch::spawn(voice.grain, source, voice.position);
+        voice.grains_ready = false;
     }
     const opxy::u32 rate = voice.sample.rate >= 8000 && voice.sample.rate <= 192000 ? voice.sample.rate : 44100;
     const opxy::u32 target_bpm_x10 = transport.bpm_x10 >= 200 && transport.bpm_x10 <= 3000 ?
@@ -224,9 +326,18 @@ void render(Voice& voice, opxy::i32* output, const opxy::i32* parameters, const 
         const opxy::u32 synced = voice.source_bpm_x10 ?
             synced_source_position(frames, rate, voice.source_bpm_x10, transport.ticks96) :
             synced_position(frames, length, transport.ticks96);
-        voice.position = transport.playing && !voice.play_once ? synced << shift : 0;
+        // A note establishes its own loop origin. Absolute transport phase
+        // would skip a different portion of the slice on every retrigger.
+        // Ordinary notes keep this pending through delayed analysis. A source
+        // audition instead advances silently until analysis becomes available.
+        voice.position = transport.playing && !voice.play_once && !voice.start_pending ? synced << shift : 0;
+        voice.start_pending = false;
         voice.sync_pending = false;
-        if (stretching) stretch::spawn(voice.grain, source, voice.position);
+        voice.grains_ready = false;
+    }
+    if (stretch_ready && !voice.grains_ready) {
+        stretch::spawn(voice.grain, source, voice.position);
+        voice.grains_ready = true;
     }
     // Rate is immutable for this sample; region/source-BPM edits invalidate
     // the divisor. Tempo and bar length are the remaining timing inputs.
@@ -264,26 +375,12 @@ void render(Voice& voice, opxy::i32* output, const opxy::i32* parameters, const 
     // from the exact tempo remainder. Preserve that remainder rather than
     // rounding the time step down every sample; even a 20-second loop stays
     // on tempo with 11 phase bits.
-    const opxy::u32 unit = 1u << shift;
     opxy::u32 advances[2];
     bool crossings[2];
     for (opxy::u32 carry = 0; carry < 2; ++carry) {
-        opxy::u32 fractional = (step.value & (unit - 1)) + carry;
-        opxy::u32 whole_advance = step.whole;
-        if (fractional >= unit) { fractional -= unit; ++whole_advance; }
-        if (!stretching) {
-            const opxy::u32 tuned = whole_advance * tuning;
-            const opxy::u32 remainder = tuned & 4095;
-            opxy::u32 fractional_whole;
-            const opxy::u32 scaled = scale_pitch_fraction(fractional, tuning, shift, fractional_whole);
-            const opxy::u32 residual = shift >= 12 ? remainder << (shift - 12) : remainder >> (12 - shift);
-            whole_advance = (tuned >> 12) + fractional_whole;
-            fractional = scaled;
-            // At +24 semitones a two-frame loop can use almost all 32 bits.
-            // Carry the extra fraction separately instead of overflowing the sum.
-            if (fractional >= unit - residual) { fractional -= unit - residual; ++whole_advance; }
-            else fractional += residual;
-        }
+        const PhaseAdvance phase = phase_advance(step, shift, tuning, stretching, carry);
+        opxy::u32 whole_advance = phase.whole;
+        const opxy::u32 fractional = phase.fraction;
         // Keep a separate whole-frame count: reducing a short loop's phase
         // early must not hide a complete traversal from play-once mode.
         crossings[carry] = whole_advance >= frames;
@@ -309,9 +406,9 @@ void render(Voice& voice, opxy::i32* output, const opxy::i32* parameters, const 
             carry = 1;
         }
         const opxy::u32 advance = advances[carry];
-        opxy::i32 left, right;
-        if (stretching) stretch::render(grain, source, advance, pitch_step, tuning, left, right);
-        else stretch::read_pcm(source, position, left, right);
+        opxy::i32 left = 0, right = 0;
+        if (stretch_ready) stretch::render(grain, source, advance, pitch_step, tuning, left, right);
+        else if (!stretching) stretch::read_pcm(source, position, left, right);
         output[i * channels] = (channels == 2 ? left : (left + right) >> 1) * 32768;
         if (channels == 2) output[i * channels + 1] = right * 32768;
         // At octave-up a tiny sample can advance by more than one loop.
@@ -329,6 +426,6 @@ void render(Voice& voice, opxy::i32* output, const opxy::i32* parameters, const 
     voice.position = position;
     voice.time_remainder = time_remainder;
     voice.finished = finished;
-    if (stretching) voice.grain = grain;
+    if (stretch_ready) voice.grain = grain;
 }
 }

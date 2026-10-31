@@ -108,6 +108,7 @@
     "chokeSameKey": 1,
     "padSettings": 1,
     "drumControls": 1,
+    "sliceTiming": 1,
     "stereoOutput": 1
   }
 }
