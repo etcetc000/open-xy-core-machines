@@ -65,7 +65,10 @@ at samples 0, 24 and 48 of each 64-sample callback, or every 8 samples while
 FM depth is above 0. Bell, drum and the low-pass and peak filters keep the
 24-sample steps under FM, because they decay or glide once per render call;
 smaller steps would shorten their decays. Under FM the low-pass filter still
-loses level on notes above about A5. Oversampling is not implemented.
+loses level on notes above about A5. No blanket oversampling stage is added:
+Wavetable, Wave Map and Wave Line retain their two internal evaluations per
+output sample, and Toy Circuit retains four. The port renders directly at
+44.1 kHz; it does not resample the engine output to 48 kHz.
 
 The module AD envelope, signature waveshaper and quantizer are not ported; the
 OP-XY's own envelopes and LFOs cover modulation. Bit and rate reduction follow
@@ -88,10 +91,14 @@ Changing model restrikes the oscillator. At depth 0, render produces
 `1 + depth × sin(modulator)` (linear FM, between zero and twice the note at
 full depth); the modulator phase advances at ratio × the note and restarts on
 each note. The modulator aliases once ratio × note passes about 2.75 kHz, half
-the 5.5 kHz update rate. Models that advance their envelopes once per render
-call (for example the struck bell and drum) decay about 2.7 times faster while
-depth is above 0. Output is int16 scaled to half-scale Q31.
+the 5.5 kHz update rate. Bell, drum, low-pass and peak-filter models retain
+24 + 24 + 16 chunks under FM to preserve their per-call state updates.
+Output is int16 scaled to Q31 using the level described above.
 
 Five models (SAW_COMB, PLUK, BOWD, BLOW, FLUT) lease an 8,200-byte delay line
 from a shared pool of 16. When the pool is full the oldest lease is stolen and
 its voice falls silent until restruck.
+
+The [performance checks](performance/README.md) compare all models against
+the original adapter and describe the exact setup optimizations and the
+limits of local timing estimates.

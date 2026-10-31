@@ -16,6 +16,9 @@ struct Voice {
     opxy::u32 position;   // frames << shift
     opxy::u32 shift;      // fractional bits; frames << shift stays below 2^31
     bool sync_pending;
+    bool start_pending; // a new note starts at its marker, even while transport runs
+    bool slicing;       // a frozen audition advances its clock while analysis loads
+    bool grains_ready;
     bool ranks_valid;
     stretch::Granule grain;
     bool stretching;
@@ -51,6 +54,8 @@ inline opxy::u32 frame(const Voice& voice) { return voice.position >> voice.shif
 void initialize(Voice&, const opxy::SampleView&);
 void start(Voice&);
 void render_sample(Voice&, const opxy::SampleBlock&);
+// Source frames per output frame for a frozen forward tap audition.
+void slice_clock(const opxy::SampleSlice&, opxy::SampleSliceRate&);
 // Original sample tempo in tenths; project tempo remains the playback target. 0 selects bars.
 void set_source_bpm_x10(Voice&, opxy::u32);
 // Tick-aligned source frame for a loop of arbitrary musical duration.
