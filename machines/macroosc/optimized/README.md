@@ -37,8 +37,9 @@ only these semantic changes:
   union and resets on initialization/model changes. The original use of
   formant zero's amplitude for all five filters is preserved.
 - Store each wavetable segment as an aligned signed16 sample/slope word.
-  The shared table is128KiB. Wavetable, Wave Map and Wave Line use exact SDK
-  fractional multiplication without a separate exceptional-slope dispatch.
+  The shared table is128KiB. Wavetable and Wave Line use exact SDK fractional
+  multiplication. Wave Map uses an unsigned wrapped product whose discarded
+  high bits vanish in the final signed16 conversion.
   Wave Chords retains its smaller interleaved byte-pair table and wider-slope
   decoder. Wave Line selects from the shared table instead of a second byte
   array. The generated resource derivative omits the now-unused original wave
@@ -223,6 +224,15 @@ eight complete updates, with the phase-delta division by eight replaced by
 a shift. Other chunk sizes keep the original loop. Independent tests compare
 all four direct paths with the generic renderer across pitch and shape
 changes, and exhaust all signed16 inputs for the fractional gain identity.
+
+Flute skips per-sample modulo addressing when the complete chunk fits inside
+both delay buffers, including each previous-byte read. A read index must be at
+least one, and each read/write index plus the chunk length must not exceed its
+ring length. Boundary crossings retain the original wrapped loop. Sample order
+and feedback are unchanged even when read and write spans overlap. Local masked
+indices do not replace the persistent counter. Both ring lengths divide 2^32,
+so unsigned counter wrap preserves the same addresses. The adapter enforces
+the chunk-size bounds; this optimization adds no voice or shared storage.
 
 All these changes are evaluated against the original adapter and original
 vendor translation units by the [performance checks](../performance/README.md).
