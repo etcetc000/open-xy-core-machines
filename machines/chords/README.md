@@ -51,9 +51,10 @@ Voicing moves one value per encoder detent. Changing voicing or spread
 regenerates every held root from the current modifiers and restarts its strum
 on the next player step. Modifier presses and releases also restart the whole
 strum, preserving each root's velocity, even if the selected notes are unchanged.
-Repeated note-ons for an already-held modifier and the unused key do not retrigger. Releasing a root still stops its chord. If a change
-places every tone outside MIDI 0..127, that root keeps its last audible chord and name
-until a valid control or modifier change is requested.
+Repeated note-ons for an already-held modifier and the unused key do not
+retrigger. Releasing a root still stops its chord. If a change places every tone
+outside MIDI 0..127, that root keeps its last audible chord and name until a valid
+control or modifier change is requested.
 
 The single keyboard shows held modifiers on the left and the last root on the
 right. Type labels above the black keys and extension labels below the white
