@@ -57,8 +57,9 @@ extern "C" u32 sdk_snapshot_engine(u32 track) { return engines[track]; }
 extern "C" u32 sdk_snapshot_generation() { return generation_now; }
 extern "C" bool sdk_snapshot_holds(u32 slot) { return slot == held_slot && slots[slot].taken; }
 
-bool says(const char* big, const char* small) {
-    return !std::strcmp(nodes[kState].text, big) && !std::strcmp(nodes[kTracks].text, small);
+// The big line, then what M1-M4 last did.
+bool says(const char* big, const char* last) {
+    return !std::strcmp(nodes[kState].text, big) && !std::strcmp(nodes[kTracks].text, last);
 }
 
 int main() {
@@ -66,25 +67,35 @@ int main() {
     CHECK(menu::hooks.layer && menu::hooks.draw && !menu::hooks.queued_control);
 
     // Held open: the card, ten empty slots, the selection and the bottom row at
-    // once; no message until M1-M4 do something.
+    // once; the big line is the selected slot's state.
     send(Layer::open);
     frame(false, 16);
     CHECK(nodes[kCover].on && nodes[kCard].on && nodes[kStrip].on && nodes[kM0].on && nodes[kM0 + 3].on);
     CHECK(nodes[kFaint0 + 3].on && !nodes[kDark0 + 3].on && nodes[kSel].on && nodes[kSel].dx == 0);
-    CHECK(says("", ""));
+    CHECK(says("empty", ""));
 
     // Black keys pick a slot (1-9, 0) and are taken, releases too; other keys are stock's.
     CHECK(send(Layer::keypress, 36) && send(Layer::keypress, 36, false));
     frame(false, 100);
     CHECK(nodes[kSel].dx == 4 * 40 && nodes[kSel].dy == 0 && !std::strcmp(nodes[kSelLabel].text, "5"));
     CHECK(!send(Layer::keypress, 16) && !send(Layer::keypress, 50));
-    // M1-M4 act at once, even while held; the message stays while the menu does.
+    // M1 into an empty slot: new; what you hear now matches it.
+    held_slot = 4;
     CHECK(send(Layer::keypress, kM1) && takes == 1);
-    for (u32 i = 0; i < 80; ++i) frame(false, 116 + i * 16);
-    CHECK(nodes[kDark0 + 4].on && !nodes[kFaint0 + 4].on && says("saved", "to slot 5"));
-    CHECK(send(Layer::keypress, 39) && send(Layer::keypress, 36));
-    frame(false, 2000);
-    CHECK(says("saved", "to slot 5"));
+    frame(false, 200);
+    CHECK(nodes[kDark0 + 4].on && !nodes[kFaint0 + 4].on && says("playing", "saved 5"));
+    // M1 again: saved over.
+    CHECK(send(Layer::keypress, kM1) && takes == 2);
+    frame(false, 300);
+    CHECK(says("playing", "saved 5"));
+    // Another slot: its state; the message stays.
+    CHECK(send(Layer::keypress, 39));
+    frame(false, 400);
+    CHECK(says("empty", "saved 5"));
+    CHECK(send(Layer::keypress, 36));
+    held_slot = 99;
+    frame(false, 500);
+    CHECK(says("saved", "saved 5"));
 
     // Encoder 1 steps one slot per detent (four counts), wrapping; turning back
     // starts over; other encoders are stock's.
@@ -106,19 +117,20 @@ int main() {
 
     // Load, clear and clear all, with what each did.
     CHECK(send(Layer::keypress, kM1 + 1) && loads == 1);
+    held_slot = 4;
     frame(true);
-    CHECK(says("loaded", "slot 5"));
+    CHECK(says("playing", "loaded 5"));
     CHECK(send(Layer::keypress, kM1 + 2) && clears == 1 && cleared_mask == 1u << 4);
     frame(true);
-    CHECK(says("cleared", "slot 5") && nodes[kFaint0 + 4].on);
+    CHECK(says("empty", "cleared 5") && nodes[kFaint0 + 4].on);
     CHECK(send(Layer::keypress, kM1 + 3) && clears == 2 && cleared_mask == 0x3ff);
     frame(true);
-    CHECK(says("cleared", "all slots"));
+    CHECK(says("empty", "cleared all"));
 
     // Closing forgets the message.
     send(Layer::close);
     send(Layer::open);
     frame(true);
-    CHECK(says("", ""));
+    CHECK(says("empty", ""));
     return 0;
 }

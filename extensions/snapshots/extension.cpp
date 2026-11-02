@@ -4,8 +4,10 @@
 // Pressing - and + together (the claim, a layer) opens it: held, for as long as
 // they are; tapped, until they are pressed again or any key the menu does not
 // use. The black keys (1-9, 0) or encoder 1 pick a slot; M1-M4 save, load,
-// clear and clear all. Beside the slots the menu says what it last did ("saved",
-// "to slot 5") until the next of them or until it closes. The SDK keeps the
+// clear and clear all. Beside the slots, the big line is the selected slot's
+// state (empty, saved, or playing: what you hear matches it) and under it what
+// M1-M4 last did ("saved 5"), until the next of them or until the menu closes.
+// The SDK keeps the
 // snapshots with the project; Morph (or any machine that reads snapshots) plays
 // them back.
 namespace opxy { namespace extensions { namespace snapshots {
@@ -17,7 +19,7 @@ const u32 kM1 = 6;
 // One step per this many raw encoder counts (a detent).
 const i32 kKnobCounts = 4;
 // What the menu last did since it opened.
-enum Flash : u32 { kFlashNone, kFlashSaved, kFlashLoaded, kFlashCleared, kFlashClearedAll };
+enum Flash : u32 { kFlashNone, kFlashSaved, kFlashSavedOver, kFlashLoaded, kFlashCleared, kFlashClearedAll };
 
 // The layer's nodes, in extension.json's order.
 enum Node : u32 {
@@ -39,16 +41,17 @@ Menu menu = {0, 0, kNone, 0, kFlashNone, kNone};
 // What the menu shows; drawn again only when it changes.
 struct View {
     u32 selected, taken, current, flash, flash_slot;
+    bool playing;  // what you hear matches the selected slot
     bool operator==(const View& o) const {
         return selected == o.selected && taken == o.taken && current == o.current && flash == o.flash &&
-               flash_slot == o.flash_slot;
+               flash_slot == o.flash_slot && playing == o.playing;
     }
 };
 View shown;
 bool fresh;
 
 View view() {
-    View v = {menu.selected, 0, kNone, menu.flash, menu.flash_slot};
+    View v = {menu.selected, 0, kNone, menu.flash, menu.flash_slot, store::holds(menu.selected)};
     for (u32 i = 0; i < kSlots; ++i) v.taken |= store::get(i) ? 1u << i : 0;
     // The slot last saved or loaded first, so of two equal slots the one in use shows.
     if (menu.active < kSlots && store::holds(menu.active)) v.current = menu.active;
@@ -60,10 +63,15 @@ void flash(u32 what, u32 slot) {
     menu.flash = what;
     menu.flash_slot = slot;
 }
+void select(u32 slot) { menu.selected = slot; }
 
 void act(u32 action, const Actions& actions) {
     const u32 slot = menu.selected;
-    if (action == 0 && actions.take_snapshot(slot)) { menu.active = slot; flash(kFlashSaved, slot); }
+    const bool over = store::get(slot) != nullptr;
+    if (action == 0 && actions.take_snapshot(slot)) {
+        menu.active = slot;
+        flash(over ? kFlashSavedOver : kFlashSaved, slot);
+    }
     if (action == 1 && actions.load_snapshot(slot)) { menu.active = slot; flash(kFlashLoaded, slot); }
     if (action == 2 && actions.clear_snapshots(1u << slot)) {
         if (menu.active == slot) menu.active = kNone;
@@ -72,7 +80,7 @@ void act(u32 action, const Actions& actions) {
     if (action == 3) {
         actions.clear_snapshots((1u << kSlots) - 1);
         menu.active = kNone;
-        flash(kFlashClearedAll, kNone);
+        flash(kFlashClearedAll, slot);
     }
     menu.generation = store::generation();
 }
@@ -102,13 +110,13 @@ bool layer(const Context&, const Layer& event, const Actions& actions) {
         while (menu.knob >= kKnobCounts || menu.knob <= -kKnobCounts) {
             const bool up = menu.knob > 0;
             menu.knob += up ? -kKnobCounts : kKnobCounts;
-            menu.selected = (menu.selected + (up ? 1 : kSlots - 1)) % kSlots;
+            select((menu.selected + (up ? 1 : kSlots - 1)) % kSlots);
         }
         return true;
     case Layer::keypress: {
         const i32 black = keys::black_index(event.key);
         if (black >= 0) {
-            if (event.pressed) menu.selected = static_cast<u32>(black);
+            if (event.pressed) select(static_cast<u32>(black));
             return true;
         }
         if (event.key >= kM1 && event.key < kM1 + 4) {
@@ -121,25 +129,17 @@ bool layer(const Context&, const Layer& event, const Actions& actions) {
     return false;
 }
 
-void append(char* line, u32& n, const char* what) {
-    for (const char* c = what; *c && n < 15; ++c) line[n++] = *c;
-}
-
-// What the menu last did, in two short lines of about 90 pixels: "saved" over
-// "to slot 5", "loaded" or "cleared" over "slot 5", "cleared" over "all slots";
-// both empty until then.
-void last_lines(const View& v, char* big, char* small) {
-    u32 b = 0, s = 0;
-    const char* what = v.flash == kFlashSaved ? "saved" : v.flash == kFlashLoaded ? "loaded" :
-                       v.flash == kFlashNone ? "" : "cleared";
-    append(big, b, what);
-    if (v.flash == kFlashClearedAll) append(small, s, "all slots");
-    else if (v.flash != kFlashNone && v.flash_slot < kSlots) {
-        append(small, s, v.flash == kFlashSaved ? "to slot " : "slot ");
-        small[s++] = keys::black_label(v.flash_slot);
-    }
-    big[b] = 0;
-    small[s] = 0;
+// What M1-M4 last did, under the state until the next of them or until the
+// menu closes, whichever slot is picked: "saved 5", "loaded 5", "cleared 5" or
+// "cleared all".
+void detail(const View& v, char* line) {
+    const char* what = v.flash == kFlashSaved || v.flash == kFlashSavedOver ? "saved " :
+                       v.flash == kFlashLoaded ? "loaded " : v.flash == kFlashCleared ? "cleared " :
+                       v.flash == kFlashClearedAll ? "cleared all" : "";
+    u32 n = 0;
+    for (; what[n] && n < 14; ++n) line[n] = what[n];
+    if (n && line[n - 1] == ' ' && v.flash_slot < kSlots) line[n++] = keys::black_label(v.flash_slot);
+    line[n] = 0;
 }
 
 void draw(const Canvas& canvas) {
@@ -161,10 +161,11 @@ void draw(const Canvas& canvas) {
     canvas.text(kSelLabel, label);
     if (v.current < kSlots)
         canvas.show(kHere, static_cast<i32>(v.current % 5) * kPitch, static_cast<i32>(v.current / 5) * kPitch);
-    char big[16], small[16];
-    last_lines(v, big, small);
-    canvas.text(kState, big);
-    canvas.text(kTracks, small);
+    // The big line: the selected slot's state.
+    canvas.text(kState, !(v.taken >> v.selected & 1) ? "empty" : v.playing ? "playing" : "saved");
+    char line[16];
+    detail(v, line);
+    canvas.text(kTracks, line);
     canvas.show(kStrip);
     for (u32 m = 0; m < 4; ++m) canvas.show(kM0 + m);
 }
