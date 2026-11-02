@@ -107,14 +107,14 @@ int main() {
     CHECK(says("saved", "saved 5"));
 
     // Encoder 1 steps one slot per detent (four counts), wrapping; turning back
-    // starts over; other encoders are stock's.
+    // starts over; the other encoders are taken and do nothing.
     CHECK(send(Layer::turn, 0, false, 3) && send(Layer::turn, 0, false, 1));
     frame(true);
     CHECK(nodes[kSel].dx == 0 && nodes[kSel].dy == 40 && !std::strcmp(nodes[kSelLabel].text, "6"));
     CHECK(send(Layer::turn, 0, false, 2) && send(Layer::turn, 0, false, -4));
     frame(true);
     CHECK(!std::strcmp(nodes[kSelLabel].text, "5"));
-    CHECK(!send(Layer::turn, 1, false, 4));
+    CHECK(send(Layer::turn, 1, false, 4) && !std::strcmp(nodes[kSelLabel].text, "5"));  // taken, does nothing
 
     // The slot the tracks hold is underlined.
     held_slot = 4;

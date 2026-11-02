@@ -82,7 +82,7 @@ int main() {
     assert(o.count == 0 && (o.display[3] & status_muted) && (o.display[0] >> 8 & 0x3ff) == 0x24);
     input.muted = 0;
 
-    // Glide: one second of a two-second glide covers half the range.
+    // Glide: half a second of a two-second glide covers a quarter of the range.
     input.values[11][3] = 0x7fffffff;  // glide 2 s
     input.values[11][2] = 0;
     input.elapsed_us = 500000;

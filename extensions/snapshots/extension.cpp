@@ -107,8 +107,9 @@ bool layer(const Context&, const Layer& event, const Actions& actions) {
         notice_changes();
         return false;
     case Layer::turn:
-        if (event.key != 0) return false;
-        if (!event.delta) return true;
+        // Every encoder is the menu's while it shows, so none edits the page under
+        // it unseen; encoder 1 picks a slot.
+        if (event.key != 0 || !event.delta) return true;
         // Raw counts: one step per detent, the remainder kept; turning back starts over.
         if ((event.delta > 0) != (menu.knob > 0) && menu.knob) menu.knob = 0;
         menu.knob += event.delta;

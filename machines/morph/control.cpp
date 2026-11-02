@@ -42,7 +42,9 @@ inline void add_range(const opxy::snapshots::Snapshot* a, const opxy::snapshots:
 
 inline void control(ControlState& state, const opxy::control::Input& input, opxy::control::Overlay& overlay) {
     using namespace opxy;
-    const i32* own = input.values[input.track < control::all_tracks ? input.track : 0];
+    // Its own controls are on its own track: without one, it steers nothing.
+    if (input.track >= control::all_tracks) return;
+    const i32* own = input.values[input.track];
     const u32 a_choice = choice(own[0]), b_choice = choice(own[1]);
     const u32 target = fraction(own[2]);
     // Glide: the heard position moves toward the control at one full sweep per
