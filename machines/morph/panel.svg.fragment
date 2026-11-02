@@ -29,6 +29,7 @@
   <path id="morph_node_12" d="M-6,6 L6,6 L0,-4 Z" fill="#dddddd" stroke="#dddddd" stroke-width="1"/>
   <text x="200" y="200" fill="#777777" font-family="UniversNextPro-Light" font-size="12px">muted</text>
   <path id="morph_node_13" d="M20,135 L470,135 L470,185 L20,185 Z" fill="#000000" stroke="#000000" stroke-width="1"/>
+  <path id="morph_node_15" d="M190,186 L250,186 L250,206 L190,206 Z" fill="#000000" stroke="#000000" stroke-width="1"/>
   <circle id="morph_palette_0" cx="640" cy="0" r="1" fill="#000000" stroke="#000000" stroke-width="1"/>
   <circle id="morph_palette_1" cx="640" cy="0" r="1" fill="#111111" stroke="#111111" stroke-width="1"/>
   <circle id="morph_palette_2" cx="640" cy="0" r="1" fill="#222222" stroke="#222222" stroke-width="1"/>

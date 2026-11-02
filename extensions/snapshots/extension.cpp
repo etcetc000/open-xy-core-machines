@@ -66,9 +66,17 @@ void flash(u32 what, u32 slot) {
 }
 void select(u32 slot) { menu.selected = slot; }
 
+// A project loaded or another hand changed the snapshots: nothing of this
+// menu's is in use any more.
+void notice_changes() {
+    if (store::generation() != menu.generation) {
+        menu.generation = store::generation();
+        menu.active = kNone;
+    }
+}
+
 void act(u32 action, const Actions& actions) {
-    // The snapshots changed elsewhere since the last frame: forget the slot in use first.
-    if (store::generation() != menu.generation) menu.active = kNone;
+    notice_changes();
     const u32 slot = menu.selected;
     bool done = false;
     if (action == 0 && (done = actions.take_snapshot(slot))) { menu.active = slot; flash(kFlashSaved, slot); }
@@ -96,15 +104,11 @@ bool layer(const Context&, const Layer& event, const Actions& actions) {
     case Layer::close:
         return false;
     case Layer::frame:
-        // A project loaded or another hand changed the snapshots: nothing of
-        // this menu's is in use any more.
-        if (store::generation() != menu.generation) {
-            menu.generation = store::generation();
-            menu.active = kNone;
-        }
+        notice_changes();
         return false;
     case Layer::turn:
         if (event.key != 0) return false;
+        if (!event.delta) return true;
         // Raw counts: one step per detent, the remainder kept; turning back starts over.
         if ((event.delta > 0) != (menu.knob > 0) && menu.knob) menu.knob = 0;
         menu.knob += event.delta;

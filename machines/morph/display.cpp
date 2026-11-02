@@ -31,12 +31,15 @@ inline void display(DisplayState&, const opxy::draw::Input&, Frame& frame) {
           status & status_no_a ? 5 : 13, fill_and_stroke);
     place(frame, 12, x_of(b) * unit, (slot_y + 26) * unit, unit,
           status & status_no_b ? 5 : 13, fill_and_stroke);
-    // Where the morph is heard; dim while it steers nothing.
-    const bool idle = (status & (status_muted | status_no_a | status_no_b)) != 0;
+    // Where the morph is heard; dim while it steers nothing: muted, a side
+    // missing, or A and B the same.
+    const bool idle = (status & (status_muted | status_no_a | status_no_b)) != 0 || a == b;
     const opxy::u32 x = position > one ? one : position;
     place(frame, 10, (line_x0 + static_cast<opxy::i32>((x * static_cast<opxy::u32>(line_width)) >> 16)) * unit,
           line_y * unit, unit, idle ? 5 : 15, fill_and_stroke);
     // The muted cover over the line sits off screen unless muted.
     place(frame, 13, status & status_muted ? 0 : 600 * unit, 0, unit, 0, fill_and_stroke);
+    // The word "muted" under the line, hidden by its own cover unless muted.
+    place(frame, 15, status & status_muted ? 600 * unit : 0, 0, unit, 0, fill_and_stroke);
 }
 }

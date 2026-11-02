@@ -32,7 +32,7 @@ inline void add_range(const opxy::snapshots::Snapshot* a, const opxy::snapshots:
             const opxy::i32 from = side(a, input, track, index), to = side(b, input, track, index);
             if (from == to) continue;
             const opxy::i32 value = mix(from, to, x);
-            if (value == input.values[track][index]) continue;
+            if ((x == 0 || x >= one) && value == input.values[track][index]) continue;
             if (overlay.count >= opxy::control::overlay_capacity) { ++dropped; continue; }
             opxy::control::add(overlay, track, index, value);
         }
@@ -69,7 +69,7 @@ inline void control(ControlState& state, const opxy::control::Input& input, opxy
     if (has_a && has_b)
         for (u32 t = 0; t < control::tracks; ++t) {
             // A track that holds no engine now and held none then is not changed, just empty.
-            if (!sdk_snapshot_engine(t) && (!a || !a->engines[t]) && (!b || !b->engines[t])) continue;
+            if (!snapshots::engine(t) && (!a || !a->engines[t]) && (!b || !b->engines[t])) continue;
             if ((!a || snapshots::matches(*a, t)) && (!b || snapshots::matches(*b, t))) usable |= 1u << t;
             else changed |= 1u << t;
         }
