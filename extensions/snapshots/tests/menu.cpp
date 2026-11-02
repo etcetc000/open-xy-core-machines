@@ -21,12 +21,21 @@ bool take(u32 slot) {
     ++generation_now;
     return true;
 }
-bool load(u32 slot) { ++loads; return slots[slot].taken; }
+// As the SDK's: a load changes the generation; a clear answers how many slots it
+// emptied, and changes nothing when there were none.
+bool load(u32 slot) {
+    ++loads;
+    if (!slots[slot].taken) return false;
+    ++generation_now;
+    return true;
+}
 u32 clear(u32 mask) {
     ++clears; cleared_mask = mask;
-    for (u32 i = 0; i < store::slots; ++i) if (mask >> i & 1) slots[i].taken = 0;
-    ++generation_now;
-    return 1;
+    u32 cleared = 0;
+    for (u32 i = 0; i < store::slots; ++i)
+        if (mask >> i & 1 && slots[i].taken) { slots[i].taken = 0; ++cleared; }
+    if (cleared) ++generation_now;
+    return cleared;
 }
 void notify(const char*) {}
 const Actions actions = {nullptr, notify, nullptr, take, load, clear};
@@ -59,7 +68,7 @@ extern "C" bool sdk_snapshot_holds(u32 slot) { return slot == held_slot && slots
 
 // The big line, then what M1-M4 last did.
 bool says(const char* big, const char* last) {
-    return !std::strcmp(nodes[kState].text, big) && !std::strcmp(nodes[kTracks].text, last);
+    return !std::strcmp(nodes[kState].text, big) && !std::strcmp(nodes[kLast].text, last);
 }
 
 int main() {
@@ -123,12 +132,18 @@ int main() {
     CHECK(send(Layer::keypress, kM1 + 2) && clears == 1 && cleared_mask == 1u << 4);
     frame(true);
     CHECK(says("empty", "cleared 5") && nodes[kFaint0 + 4].on);
+    take(7);  // something left to clear
     CHECK(send(Layer::keypress, kM1 + 3) && clears == 2 && cleared_mask == 0x3ff);
     frame(true);
     CHECK(says("empty", "cleared all"));
 
     // A press that does nothing (load an empty slot) leaves no stale message.
     CHECK(send(Layer::keypress, kM1 + 1) && loads == 2);
+    frame(true);
+    CHECK(says("empty", ""));
+
+    // Clear all with nothing to clear: no message either.
+    CHECK(send(Layer::keypress, kM1 + 3) && clears == 3);
     frame(true);
     CHECK(says("empty", ""));
 

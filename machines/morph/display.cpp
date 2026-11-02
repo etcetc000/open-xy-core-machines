@@ -18,7 +18,7 @@ inline void display(DisplayState&, const opxy::draw::Input&, Frame& frame) {
     // Choices: 0 live, else slot + 1.
     const opxy::u32 a = slots & 15, b = slots >> 4 & 15, taken = slots >> 8 & 0x3ff;
     const auto x_of = [](opxy::u32 c) {
-        return c == 0 || c > 10 ? live_x : slot_x0 + slot_pitch * static_cast<opxy::i32>(c - 1);
+        return c == 0 ? live_x : slot_x0 + slot_pitch * static_cast<opxy::i32>(c - 1);
     };
     place(frame, 14, live_x * unit, slot_y * unit, unit, a == 0 || b == 0 ? 15 : 9, fill_and_stroke);
     for (opxy::u32 s = 0; s < 10; ++s) {

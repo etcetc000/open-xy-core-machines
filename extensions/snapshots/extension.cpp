@@ -25,7 +25,7 @@ enum Flash : u32 { kFlashNone, kFlashSaved, kFlashLoaded, kFlashCleared, kFlashC
 // The layer's nodes, in extension.json's order.
 enum Node : u32 {
     kCover, kCard, kBox0, kDark0 = kBox0 + kSlots, kFaint0 = kDark0 + kSlots, kSel = kFaint0 + kSlots,
-    kSelLabel, kDivider, kState, kTracks, kHere, kStrip, kM0, kNodes = kM0 + 4
+    kSelLabel, kDivider, kState, kLast, kHere, kStrip, kM0, kNodes = kM0 + 4
 };
 // The slots' pitch in pixels, across and down (two rows of five).
 const i32 kPitch = 40;
@@ -153,7 +153,7 @@ void draw(const Canvas& canvas) {
     fresh = false;
     shown = v;
     for (u32 i = 0; i < kNodes; ++i) canvas.hide(i);
-    const u32 fixed[] = {kCover, kCard, kDivider, kState, kTracks};
+    const u32 fixed[] = {kCover, kCard, kDivider, kState, kLast};
     for (u32 node : fixed) canvas.show(node);
     for (u32 s = 0; s < kSlots; ++s) {
         canvas.show(kBox0 + s);
@@ -170,7 +170,7 @@ void draw(const Canvas& canvas) {
     canvas.text(kState, !(v.taken >> v.selected & 1) ? "empty" : v.playing ? "playing" : "saved");
     char line[16];
     detail(v, line);
-    canvas.text(kTracks, line);
+    canvas.text(kLast, line);
     canvas.show(kStrip);
     for (u32 m = 0; m < 4; ++m) canvas.show(kM0 + m);
 }

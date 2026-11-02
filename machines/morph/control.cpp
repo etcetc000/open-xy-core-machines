@@ -1,7 +1,7 @@
 #include <opxy/snapshots.hpp>
 #include "controls.h"
 // Morph blends between two sides, A and B, each one of the SDK's snapshots or
-// "live", what the tracks play now (knob turns, locks and LFOs included), and
+// "live", what the tracks play now (knob turns and locks included), and
 // overlays every instrument track parameter the two set differently with a point
 // between them. A step's parameter lock always plays as written (the SDK keeps
 // overlays off it). It never takes a snapshot and never edits a track: what it plays is

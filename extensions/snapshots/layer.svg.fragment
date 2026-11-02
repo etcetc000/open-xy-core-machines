@@ -40,7 +40,7 @@
   <text id="snapshots_sel_label" transform="matrix(1 0 0 1 99.1 96)" fill="#CDCDCD" font-family="UniversNextPro-Light" font-size="30px">1</text>
   <path id="snapshots_divider" d="M297.5 68 L297.5 143" fill="none" stroke="#AFAFAF" stroke-width="0.7"/>
   <text id="snapshots_state" transform="matrix(1 0 0 1 307 94)" fill="#000000" font-family="UniversNextPro-Light" font-size="18px">playing</text>
-  <text id="snapshots_tracks" transform="matrix(1 0 0 1 307 128)" fill="#4B4B4B" font-family="UniversNextPro-Light" font-size="14px">saved 3</text>
+  <text id="snapshots_last" transform="matrix(1 0 0 1 307 128)" fill="#4B4B4B" font-family="UniversNextPro-Light" font-size="14px">saved 3</text>
   <path id="snapshots_here" d="M100 104.5 L115 104.5 L115 106.5 L100 106.5 Z" fill="#000000"/>
   <path id="snapshots_strip" d="M0 193 L480 193 L480 220 L0 220 Z" fill="#000000"/>
   <text id="snapshots_m0" transform="matrix(1 0 0 1 28.8 215)" fill="#CDCDCD" font-family="UniversNextPro-Light" font-size="20px">save</text>
