@@ -57,30 +57,34 @@ extern "C" u32 sdk_snapshot_engine(u32 track) { return engines[track]; }
 extern "C" u32 sdk_snapshot_generation() { return generation_now; }
 extern "C" bool sdk_snapshot_holds(u32 slot) { return slot == held_slot && slots[slot].taken; }
 
+bool says(const char* big, const char* small) {
+    return !std::strcmp(nodes[kState].text, big) && !std::strcmp(nodes[kTracks].text, small);
+}
+
 int main() {
     for (u32 t = 0; t < control::tracks; ++t) engines[t] = 40 + t;
     CHECK(menu::hooks.layer && menu::hooks.draw && !menu::hooks.queued_control);
 
-    // Held open: the card, ten empty slots and the selection, no bottom row yet.
+    // Held open: the card, ten empty slots, the selection and the bottom row at
+    // once; no message until M1-M4 do something.
     send(Layer::open);
     frame(false, 16);
-    CHECK(nodes[kCover].on && nodes[kCard].on && !nodes[kStrip].on && !nodes[kM0].on);
+    CHECK(nodes[kCover].on && nodes[kCard].on && nodes[kStrip].on && nodes[kM0].on && nodes[kM0 + 3].on);
     CHECK(nodes[kFaint0 + 3].on && !nodes[kDark0 + 3].on && nodes[kSel].on && nodes[kSel].dx == 0);
-    CHECK(!std::strcmp(nodes[kState].text, "unsaved") && !std::strcmp(nodes[kTracks].text, "empty"));
+    CHECK(says("", ""));
 
     // Black keys pick a slot (1-9, 0) and are taken, releases too; other keys are stock's.
     CHECK(send(Layer::keypress, 36) && send(Layer::keypress, 36, false));
     frame(false, 100);
     CHECK(nodes[kSel].dx == 4 * 40 && nodes[kSel].dy == 0 && !std::strcmp(nodes[kSelLabel].text, "5"));
     CHECK(!send(Layer::keypress, 16) && !send(Layer::keypress, 50));
-    // M1-M4 are taken, but act only once the bottom row shows.
-    CHECK(send(Layer::keypress, kM1) && takes == 0);
-    frame(false, tap_ms);
-    CHECK(nodes[kStrip].on && nodes[kM0].on && nodes[kM0 + 3].on);
+    // M1-M4 act at once, even while held; the message stays while the menu does.
     CHECK(send(Layer::keypress, kM1) && takes == 1);
-    frame(false, tap_ms + 16);
-    CHECK(nodes[kDark0 + 4].on && !nodes[kFaint0 + 4].on && !std::strcmp(nodes[kState].text, "saved 5"));
-    CHECK(!std::strcmp(nodes[kTracks].text, "saved"));
+    for (u32 i = 0; i < 80; ++i) frame(false, 116 + i * 16);
+    CHECK(nodes[kDark0 + 4].on && !nodes[kFaint0 + 4].on && says("saved", "to slot 5"));
+    CHECK(send(Layer::keypress, 39) && send(Layer::keypress, 36));
+    frame(false, 2000);
+    CHECK(says("saved", "to slot 5"));
 
     // Encoder 1 steps one slot per detent (four counts), wrapping; turning back
     // starts over; other encoders are stock's.
@@ -92,32 +96,29 @@ int main() {
     CHECK(!std::strcmp(nodes[kSelLabel].text, "5"));
     CHECK(!send(Layer::turn, 1, false, 4));
 
-    // The tracks hold slot 5: it is active and underlined; a track that changed
-    // engine leaves "fits 7/8".
+    // The slot the tracks hold is underlined.
     held_slot = 4;
-    for (u32 i = 0; i < 80; ++i) frame(true);  // the flash ends
-    CHECK(!std::strcmp(nodes[kState].text, "5 active") && nodes[kHere].on && nodes[kHere].dx == 4 * 40);
-    engines[2] = 99;
+    frame(true);
+    CHECK(nodes[kHere].on && nodes[kHere].dx == 4 * 40);
     held_slot = 99;
     frame(true);
-    CHECK(!std::strcmp(nodes[kState].text, "5 edited") && !nodes[kHere].on && !std::strcmp(nodes[kTracks].text, "fits 7/8"));
+    CHECK(!nodes[kHere].on);
 
     // Load, clear and clear all, with what each did.
     CHECK(send(Layer::keypress, kM1 + 1) && loads == 1);
     frame(true);
-    CHECK(!std::strcmp(nodes[kState].text, "loaded 5"));
+    CHECK(says("loaded", "slot 5"));
     CHECK(send(Layer::keypress, kM1 + 2) && clears == 1 && cleared_mask == 1u << 4);
     frame(true);
-    CHECK(!std::strcmp(nodes[kState].text, "cleared 5") && nodes[kFaint0 + 4].on);
+    CHECK(says("cleared", "slot 5") && nodes[kFaint0 + 4].on);
     CHECK(send(Layer::keypress, kM1 + 3) && clears == 2 && cleared_mask == 0x3ff);
     frame(true);
-    CHECK(!std::strcmp(nodes[kState].text, "all clear"));
+    CHECK(says("cleared", "all slots"));
 
-    // A project load (the snapshots changed elsewhere) forgets the slot in use.
-    take(7);
+    // Closing forgets the message.
     send(Layer::close);
     send(Layer::open);
-    for (u32 i = 0; i < 80; ++i) frame(true);
-    CHECK(!std::strcmp(nodes[kState].text, "unsaved"));
+    frame(true);
+    CHECK(says("", ""));
     return 0;
 }

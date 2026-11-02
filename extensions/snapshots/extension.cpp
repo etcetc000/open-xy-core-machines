@@ -3,10 +3,11 @@
 // Snapshots: a menu for the SDK's ten snapshots, laid out like stock's bar menu.
 // Pressing - and + together (the claim, a layer) opens it: held, for as long as
 // they are; tapped, until they are pressed again or any key the menu does not
-// use. The black keys (1-9, 0) or encoder 1 pick a slot; once the bottom row
-// shows (at once when tapped open, after a moment when held), M1-M4 save, load,
-// clear and clear all. The SDK keeps the snapshots with the project; Morph (or
-// any machine that reads snapshots) plays them back.
+// use. The black keys (1-9, 0) or encoder 1 pick a slot; M1-M4 save, load,
+// clear and clear all. Beside the slots the menu says what it last did ("saved",
+// "to slot 5") until the next of them or until it closes. The SDK keeps the
+// snapshots with the project; Morph (or any machine that reads snapshots) plays
+// them back.
 namespace opxy { namespace extensions { namespace snapshots {
 namespace {
 namespace store = opxy::snapshots;
@@ -15,8 +16,7 @@ const u32 kSlots = store::slots, kNone = kSlots;
 const u32 kM1 = 6;
 // One step per this many raw encoder counts (a detent).
 const i32 kKnobCounts = 4;
-// What the menu last did, shown this long in place of the state.
-const u32 kFlashMs = 1200;
+// What the menu last did since it opened.
 enum Flash : u32 { kFlashNone, kFlashSaved, kFlashLoaded, kFlashCleared, kFlashClearedAll };
 
 // The layer's nodes, in extension.json's order.
@@ -30,35 +30,25 @@ const i32 kPitch = 40;
 struct Menu {
     u32 selected;      // stays between openings
     i32 knob;          // encoder counts toward the next step
-    bool strip;        // the bottom row shows
     u32 active;        // the slot last saved or loaded here, or kNone
     u32 generation;    // the snapshots' generation as this menu last left them
-    u32 flash, flash_slot, flash_ms;
+    u32 flash, flash_slot;
 };
-Menu menu = {0, 0, false, kNone, 0, kFlashNone, kNone, 0};
+Menu menu = {0, 0, kNone, 0, kFlashNone, kNone};
 
 // What the menu shows; drawn again only when it changes.
 struct View {
-    bool strip;
-    u32 selected, taken, fits, current, active, flash, flash_slot;
+    u32 selected, taken, current, flash, flash_slot;
     bool operator==(const View& o) const {
-        return strip == o.strip && selected == o.selected && taken == o.taken && fits == o.fits &&
-               current == o.current && active == o.active && flash == o.flash && flash_slot == o.flash_slot;
+        return selected == o.selected && taken == o.taken && current == o.current && flash == o.flash &&
+               flash_slot == o.flash_slot;
     }
 };
 View shown;
 bool fresh;
 
-// How many tracks still hold the engine they held when `slot` was taken.
-u32 fits(u32 slot) {
-    const store::Snapshot* s = store::get(slot);
-    u32 count = 0;
-    for (u32 t = 0; s && t < control::tracks; ++t) count += store::matches(*s, t);
-    return count;
-}
 View view() {
-    View v = {menu.strip, menu.selected, 0, fits(menu.selected), kNone, menu.active,
-              menu.flash_ms ? menu.flash : kFlashNone, menu.flash_slot};
+    View v = {menu.selected, 0, kNone, menu.flash, menu.flash_slot};
     for (u32 i = 0; i < kSlots; ++i) v.taken |= store::get(i) ? 1u << i : 0;
     // The slot last saved or loaded first, so of two equal slots the one in use shows.
     if (menu.active < kSlots && store::holds(menu.active)) v.current = menu.active;
@@ -69,7 +59,6 @@ View view() {
 void flash(u32 what, u32 slot) {
     menu.flash = what;
     menu.flash_slot = slot;
-    menu.flash_ms = kFlashMs;
 }
 
 void act(u32 action, const Actions& actions) {
@@ -92,8 +81,7 @@ bool layer(const Context&, const Layer& event, const Actions& actions) {
     switch (event.kind) {
     case Layer::open:
         menu.knob = 0;
-        menu.flash_ms = 0;
-        menu.strip = false;
+        menu.flash = kFlashNone;
         fresh = true;
         return false;
     case Layer::close:
@@ -105,8 +93,6 @@ bool layer(const Context&, const Layer& event, const Actions& actions) {
             menu.generation = store::generation();
             menu.active = kNone;
         }
-        menu.flash_ms = menu.flash_ms > event.elapsed_ms ? menu.flash_ms - event.elapsed_ms : 0;
-        menu.strip = event.latched || event.held_ms >= tap_ms;
         return false;
     case Layer::turn:
         if (event.key != 0) return false;
@@ -126,8 +112,7 @@ bool layer(const Context&, const Layer& event, const Actions& actions) {
             return true;
         }
         if (event.key >= kM1 && event.key < kM1 + 4) {
-            // The bottom row acts once it shows, as on the bar menu.
-            if (event.pressed && menu.strip) act(event.key - kM1, actions);
+            if (event.pressed) act(event.key - kM1, actions);
             return true;
         }
         return false;
@@ -136,20 +121,25 @@ bool layer(const Context&, const Layer& event, const Actions& actions) {
     return false;
 }
 
-// "3 active", "saved 3": short words, as the column is about 90 pixels at 18 px.
-void state_line(const View& v, char* line) {
-    const char* what = nullptr;
-    u32 slot = kNone, n = 0;
-    if (v.flash == kFlashSaved) { what = "saved "; slot = v.flash_slot; }
-    else if (v.flash == kFlashLoaded) { what = "loaded "; slot = v.flash_slot; }
-    else if (v.flash == kFlashCleared) { what = "cleared "; slot = v.flash_slot; }
-    else if (v.flash == kFlashClearedAll) what = "all clear";
-    else if (v.current < kSlots) { line[n++] = keys::black_label(v.current); what = " active"; }
-    else if (v.active < kSlots) { line[n++] = keys::black_label(v.active); what = " edited"; }
-    else what = "unsaved";
-    for (const char* c = what; *c && n < 10; ++c) line[n++] = *c;
-    if (slot < kSlots) line[n++] = keys::black_label(slot);
-    line[n] = 0;
+void append(char* line, u32& n, const char* what) {
+    for (const char* c = what; *c && n < 15; ++c) line[n++] = *c;
+}
+
+// What the menu last did, in two short lines of about 90 pixels: "saved" over
+// "to slot 5", "loaded" or "cleared" over "slot 5", "cleared" over "all slots";
+// both empty until then.
+void last_lines(const View& v, char* big, char* small) {
+    u32 b = 0, s = 0;
+    const char* what = v.flash == kFlashSaved ? "saved" : v.flash == kFlashLoaded ? "loaded" :
+                       v.flash == kFlashNone ? "" : "cleared";
+    append(big, b, what);
+    if (v.flash == kFlashClearedAll) append(small, s, "all slots");
+    else if (v.flash != kFlashNone && v.flash_slot < kSlots) {
+        append(small, s, v.flash == kFlashSaved ? "to slot " : "slot ");
+        small[s++] = keys::black_label(v.flash_slot);
+    }
+    big[b] = 0;
+    small[s] = 0;
 }
 
 void draw(const Canvas& canvas) {
@@ -171,16 +161,12 @@ void draw(const Canvas& canvas) {
     canvas.text(kSelLabel, label);
     if (v.current < kSlots)
         canvas.show(kHere, static_cast<i32>(v.current % 5) * kPitch, static_cast<i32>(v.current / 5) * kPitch);
-    char line[12];
-    state_line(v, line);
-    canvas.text(kState, line);
-    // The selected slot: empty, saved, or how many tracks a load would restore.
-    const char partly[9] = {'f', 'i', 't', 's', ' ', static_cast<char>('0' + v.fits), '/', '8', 0};
-    canvas.text(kTracks, !(v.taken >> v.selected & 1) ? "empty" : v.fits == control::tracks ? "saved" : partly);
-    if (v.strip) {
-        canvas.show(kStrip);
-        for (u32 m = 0; m < 4; ++m) canvas.show(kM0 + m);
-    }
+    char big[16], small[16];
+    last_lines(v, big, small);
+    canvas.text(kState, big);
+    canvas.text(kTracks, small);
+    canvas.show(kStrip);
+    for (u32 m = 0; m < 4; ++m) canvas.show(kM0 + m);
 }
 }
 extern constexpr Hooks hooks = Hooks().with_layer(layer).with_draw(draw);
