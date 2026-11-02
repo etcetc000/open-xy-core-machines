@@ -1,0 +1,6 @@
+{
+  "schema": 1,
+  "sdk": "1.7",
+  "kind": "synth",
+  "description": "Morph between two snapshots"
+}

@@ -13,6 +13,7 @@ of this repository. They also serve as worked examples for writing your own.
 | [Timestretch](machines/timestretch) | Sample engine | Tempo-locked, pitch-preserving loops on the stock drum page |
 | [Ring Mod](machines/ringmod) | Send effect | Ring modulation with the stock mixer handling Dry |
 | [Ping Pong](machines/pingpong) | Send effect | A ping-pong delay with stock delay's tempo-synced controls, in the send slot's scratch memory (SDK 1.2) |
+| [Morph](machines/morph) | Synth on the CV track | Blends between two snapshots, or live and one, by overlaying the tracks' parameters (track control) |
 
 Each folder is one machine: `machine.json` (kind, SDK version and the numbers it
 prefers), `definition.json` (controls), its C++ and, for a synth, its artwork.
@@ -21,6 +22,7 @@ Some have their own sound tests in `tests/`.
 | Extension | What it shows |
 | --- | --- |
 | [Retrospective capture](extensions/capture) | Double-tap Record to replace the sequence with what you just played: claims a key, replaces notes with Undo, tests its gesture with fake actions |
+| [Snapshots](extensions/snapshots) | A bar-menu-style menu for the SDK's ten snapshots on - and +: a layer claim, its own artwork drawn over every page, the snapshot actions, and Morph brought along as the machine that plays them |
 
 Each extension folder holds `extension.json` (its ID, the builder's text, and the
 claims and actions it uses from the SDK's registry), `extension.cpp` and its
@@ -37,7 +39,7 @@ Clone the SDK next to this repository, then from here:
 
 ```sh
 python ../open-xy/sdk.py test --machine machines/fm2op --machine machines/karplus
-python ../open-xy/sdk.py test --extension extensions/capture
+python ../open-xy/sdk.py test --extension extensions/capture --extension extensions/snapshots
 python ../open-xy/sdk.py preview --machine machines/fm2op --out ../previews/fm2op-001
 python ../open-xy/tools/serve_harness.py --preview ../previews/fm2op-001
 ```
