@@ -127,6 +127,11 @@ int main() {
     frame(true);
     CHECK(says("empty", "cleared all"));
 
+    // A press that does nothing (load an empty slot) leaves no stale message.
+    CHECK(send(Layer::keypress, kM1 + 1) && loads == 2);
+    frame(true);
+    CHECK(says("empty", ""));
+
     // Closing forgets the message.
     send(Layer::close);
     send(Layer::open);

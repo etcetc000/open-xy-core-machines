@@ -68,6 +68,8 @@ inline void control(ControlState& state, const opxy::control::Input& input, opxy
     // A track is usable while it holds every snapshot side's engine.
     if (has_a && has_b)
         for (u32 t = 0; t < control::tracks; ++t) {
+            // A track that holds no engine now and held none then is not changed, just empty.
+            if (!sdk_snapshot_engine(t) && (!a || !a->engines[t]) && (!b || !b->engines[t])) continue;
             if ((!a || snapshots::matches(*a, t)) && (!b || snapshots::matches(*b, t))) usable |= 1u << t;
             else changed |= 1u << t;
         }

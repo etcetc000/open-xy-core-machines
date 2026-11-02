@@ -5,7 +5,8 @@
 // they are; tapped, until they are pressed again or any key the menu does not
 // use. The black keys (1-9, 0) or encoder 1 pick a slot; M1-M4 save, load,
 // clear and clear all. Beside the slots, the big line is the selected slot's
-// state (empty, saved, or playing: what you hear matches it) and under it what
+// state (empty, saved, or playing: the tracks' stored values match it, under
+// any overlay) and under it what
 // M1-M4 last did ("saved 5"), until the next of them or until the menu closes.
 // The SDK keeps the
 // snapshots with the project; Morph (or any machine that reads snapshots) plays
@@ -19,7 +20,7 @@ const u32 kM1 = 6;
 // One step per this many raw encoder counts (a detent).
 const i32 kKnobCounts = 4;
 // What the menu last did since it opened.
-enum Flash : u32 { kFlashNone, kFlashSaved, kFlashSavedOver, kFlashLoaded, kFlashCleared, kFlashClearedAll };
+enum Flash : u32 { kFlashNone, kFlashSaved, kFlashLoaded, kFlashCleared, kFlashClearedAll };
 
 // The layer's nodes, in extension.json's order.
 enum Node : u32 {
@@ -41,7 +42,7 @@ Menu menu = {0, 0, kNone, 0, kFlashNone, kNone};
 // What the menu shows; drawn again only when it changes.
 struct View {
     u32 selected, taken, current, flash, flash_slot;
-    bool playing;  // what you hear matches the selected slot
+    bool playing;  // the tracks' stored values match the selected slot
     bool operator==(const View& o) const {
         return selected == o.selected && taken == o.taken && current == o.current && flash == o.flash &&
                flash_slot == o.flash_slot && playing == o.playing;
@@ -66,22 +67,22 @@ void flash(u32 what, u32 slot) {
 void select(u32 slot) { menu.selected = slot; }
 
 void act(u32 action, const Actions& actions) {
+    // The snapshots changed elsewhere since the last frame: forget the slot in use first.
+    if (store::generation() != menu.generation) menu.active = kNone;
     const u32 slot = menu.selected;
-    const bool over = store::get(slot) != nullptr;
-    if (action == 0 && actions.take_snapshot(slot)) {
-        menu.active = slot;
-        flash(over ? kFlashSavedOver : kFlashSaved, slot);
-    }
-    if (action == 1 && actions.load_snapshot(slot)) { menu.active = slot; flash(kFlashLoaded, slot); }
-    if (action == 2 && actions.clear_snapshots(1u << slot)) {
+    bool done = false;
+    if (action == 0 && (done = actions.take_snapshot(slot))) { menu.active = slot; flash(kFlashSaved, slot); }
+    if (action == 1 && (done = actions.load_snapshot(slot))) { menu.active = slot; flash(kFlashLoaded, slot); }
+    if (action == 2 && (done = actions.clear_snapshots(1u << slot) != 0)) {
         if (menu.active == slot) menu.active = kNone;
         flash(kFlashCleared, slot);
     }
-    if (action == 3) {
-        actions.clear_snapshots((1u << kSlots) - 1);
+    if (action == 3 && (done = actions.clear_snapshots((1u << kSlots) - 1) != 0)) {
         menu.active = kNone;
         flash(kFlashClearedAll, slot);
     }
+    // A press that did nothing (an empty slot to load or clear) leaves no stale message.
+    if (!done) menu.flash = kFlashNone;
     menu.generation = store::generation();
 }
 
@@ -133,7 +134,7 @@ bool layer(const Context&, const Layer& event, const Actions& actions) {
 // menu closes, whichever slot is picked: "saved 5", "loaded 5", "cleared 5" or
 // "cleared all".
 void detail(const View& v, char* line) {
-    const char* what = v.flash == kFlashSaved || v.flash == kFlashSavedOver ? "saved " :
+    const char* what = v.flash == kFlashSaved ? "saved " :
                        v.flash == kFlashLoaded ? "loaded " : v.flash == kFlashCleared ? "cleared " :
                        v.flash == kFlashClearedAll ? "cleared all" : "";
     u32 n = 0;
