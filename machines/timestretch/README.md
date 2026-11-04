@@ -77,7 +77,9 @@ the 18-bit settings format introduced in SDK 1.6; older firmware cannot read it.
 - **Analysis.** Timestretch mode needs an analysis of the sample, prepared on
   the stock file worker after assignment; the progress overlay reports it.
   Repitch plays meanwhile; timestretch stays silent until it completes. The
-  stock loader's limit applies: 882,000 frames (20 seconds at 44.1 kHz).
+  stock loader's limit applies: 882,000 frames (20 seconds at 44.1 kHz), or
+  1,048,575 (23.7 seconds) with the [Longer samples](../../extensions/long_samples)
+  extension.
 - New presets use zero amp decay and full release. Load the preset on a fresh
   track when testing; saved tracks keep their stored parameter values.
 
