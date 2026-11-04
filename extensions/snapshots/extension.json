@@ -1,0 +1,62 @@
+{
+  "id": "snapshots",
+  "name": "Snapshots",
+  "description": "Hold - and + for the snapshot menu, or tap them to keep it open: black keys or encoder 1 pick 1-9, 0; M1-M4 save, load, clear, clear all.",
+  "note": "Open, any other key closes it. - or + alone still works, on release.",
+  "claims": [
+    "minus_plus"
+  ],
+  "actions": [
+    "snapshot"
+  ],
+  "machines": [
+    "../../machines/morph"
+  ],
+  "layer": {
+    "nodes": [
+      "cover",
+      "card",
+      "box_0",
+      "box_1",
+      "box_2",
+      "box_3",
+      "box_4",
+      "box_5",
+      "box_6",
+      "box_7",
+      "box_8",
+      "box_9",
+      "dark_0",
+      "dark_1",
+      "dark_2",
+      "dark_3",
+      "dark_4",
+      "dark_5",
+      "dark_6",
+      "dark_7",
+      "dark_8",
+      "dark_9",
+      "faint_0",
+      "faint_1",
+      "faint_2",
+      "faint_3",
+      "faint_4",
+      "faint_5",
+      "faint_6",
+      "faint_7",
+      "faint_8",
+      "faint_9",
+      "sel",
+      "sel_label",
+      "divider",
+      "state",
+      "last",
+      "here",
+      "strip",
+      "m0",
+      "m1",
+      "m2",
+      "m3"
+    ]
+  }
+}

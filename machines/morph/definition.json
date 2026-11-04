@@ -1,0 +1,106 @@
+{
+  "schema": 1,
+  "id": "morph",
+  "name": "Morph",
+  "parameters": [
+    {
+      "id": "a",
+      "label": "A",
+      "default": 0.045455,
+      "mapping": {
+        "kind": "enum",
+        "labels": [
+          "live",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "0"
+        ]
+      },
+      "display": "enum"
+    },
+    {
+      "id": "b",
+      "label": "B",
+      "default": 0.136364,
+      "mapping": {
+        "kind": "enum",
+        "labels": [
+          "live",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "0"
+        ]
+      },
+      "display": "enum"
+    },
+    {
+      "id": "morph",
+      "label": "morph",
+      "default": 0,
+      "mapping": {
+        "kind": "linear",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "display": "percent"
+    },
+    {
+      "id": "glide",
+      "label": "glide",
+      "default": 0,
+      "mapping": {
+        "kind": "linear",
+        "minimum": 0,
+        "maximum": 2
+      },
+      "display": "duration"
+    }
+  ],
+  "presets": {
+    "Init": {
+      "a": 0.045455,
+      "b": 0.136364,
+      "morph": 0,
+      "glide": 0
+    }
+  },
+  "resources": {
+    "voiceBytes": 4,
+    "voiceAlignment": 4,
+    "voiceCapacity": 1,
+    "sharedBytes": 0,
+    "outputPeakQ31": 1,
+    "display": {
+      "stateBytes": 4,
+      "stateAlignment": 4,
+      "paths": 0,
+      "points": 0,
+      "nodes": 16,
+      "texts": 0,
+      "palette": 16
+    },
+    "trackControl": {
+      "stateBytes": 8,
+      "stateAlignment": 4,
+      "unique": true,
+      "aux": [
+        12
+      ],
+      "sharedLfo": false
+    }
+  }
+}
