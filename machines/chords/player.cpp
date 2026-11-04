@@ -175,7 +175,9 @@ bool release(State& state, u32 note) {
     } else if (m >= kTypes) {
         state.extensions &= static_cast<u8>(~(1u << (m - kTypes)));
     }
-    if (m) modifiers_changed(state);
+    // Lifting a modifier never restrums: held chords keep sounding as they
+    // are, so the left hand can let go while the right hand plays on. The
+    // next root, modifier press or voicing change uses what is still held.
     return !root_held;
 }
 
