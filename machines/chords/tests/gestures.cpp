@@ -61,21 +61,23 @@ void live_modifiers() {
     require(chords::update(r.state,r.controls,u)); notes(u.plan,{72,75,79,82},77);
     chords::display(r.state,r.controls,shown);
     require(std::string(shown.text)=="C minor 7");
-    require(r.off(Minor7));
-    require(chords::update(r.state,r.controls,u)); notes(u.plan,{72,75,79},77);
-    require(r.off(Minor)); // most recent remaining held type wins
-    require(chords::update(r.state,r.controls,u)); notes(u.plan,{72,76,79},77);
-    require(r.off(Major));
+    require(r.off(Minor7)); // lifting a modifier never restrums
+    require(!chords::update(r.state,r.controls,u));
+    require(r.off(Minor)); require(!chords::update(r.state,r.controls,u));
+    chords::display(r.state,r.controls,shown);
+    require(std::string(shown.text)=="C minor 7"); // still the sounding chord
+    r.on(Nine); // the next press uses what is still held: the remaining type wins
+    require(chords::update(r.state,r.controls,u)); notes(u.plan,{72,76,79,86},77);
+    require(r.off(Nine)); require(r.off(Major));
+    require(!chords::update(r.state,r.controls,u));
+    r.on(Nine); // any real modifier press restrums, even without a type
     require(chords::update(r.state,r.controls,u)); notes(u.plan,{72},77);
     chords::display(r.state,r.controls,shown);
     require(std::string(shown.text)=="C");
-    r.on(Nine); // any real modifier transition restrums, even without a type
-    require(chords::update(r.state,r.controls,u)); notes(u.plan,{72},77);
     r.on(Nine); require(!chords::update(r.state,r.controls,u)); // duplicate note-on
     r.on(Unused); require(!chords::update(r.state,r.controls,u));
     require(r.off(Unused)); require(!chords::update(r.state,r.controls,u));
-    require(r.off(Nine));
-    require(chords::update(r.state,r.controls,u)); notes(u.plan,{72},77);
+    require(r.off(Nine)); require(!chords::update(r.state,r.controls,u));
     require(!r.off(Nine)); require(!chords::update(r.state,r.controls,u));
     r.on(Major); require(!r.off(C)); // released roots cannot be revived
     require(!chords::update(r.state,r.controls,u));
@@ -84,8 +86,7 @@ void live_modifiers() {
     require(!chords::update(r.state,r.controls,u)); // no duplicate initial strum
     r.on(Six); // 13 supersedes 6, but changing 6 still retriggers
     require(chords::update(r.state,r.controls,u)); notes(u.plan,{72,75,79,93});
-    r.off(Six);
-    require(chords::update(r.state,r.controls,u)); notes(u.plan,{72,75,79,93});
+    r.off(Six); require(!chords::update(r.state,r.controls,u));
     chords::reset(r.state);
     require(!chords::update(r.state,r.controls,u));
 }
@@ -125,17 +126,17 @@ void modifier_edges() {
         r.on(keys[i]); require(chords::update(r.state,r.controls,u));
         notes(u.plan,{72,76,79,72+intervals[i]});
         require(!chords::update(r.state,r.controls,u));
-        r.off(keys[i]); require(chords::update(r.state,r.controls,u));
-        notes(u.plan,{72,76,79});
+        r.off(keys[i]); require(!chords::update(r.state,r.controls,u)); // lifting keeps the chord
+        r.on(keys[i]); r.off(keys[i]); require(chords::update(r.state,r.controls,u));
+        notes(u.plan,{72,76,79}); // a later press restrums without the lifted extension
         require(!chords::update(r.state,r.controls,u));
     }
     Rig r; r.on(Major); r.on(Minor); r.on(C);
-    r.off(Major); // even releasing a non-winning type is a real modifier change
-    require(chords::update(r.state,r.controls,u)); notes(u.plan,{72,75,79});
+    r.off(Major); require(!chords::update(r.state,r.controls,u));
     r.controls.value[2]=top;
     require(chords::update(r.state,r.controls,u));
     r.off(C); r.on(100); notes(r.plan,{124,127});
-    r.off(Minor); // single-note +6 octaves is out of range: keep the audible chord
+    r.off(Minor); // lifting a modifier keeps the audible chord
     require(!chords::update(r.state,r.controls,u));
     Display d={}; chords::display(r.state,r.controls,d);
     require(std::string(d.text)=="E minor");
@@ -289,10 +290,24 @@ void held_controls_retrigger_chords() {
     edge.controls.value[2]=centre;
     require(chords::update(edge.state,edge.controls,u)); notes(u.plan,{120});
 }
+void releases_never_retrigger() {
+    // Two hands at once: lifting any key, left or right, sounds nothing new.
+    Rig r; Update u={};
+    r.on(Major); r.on(Minor7); r.on(C,77); r.on(C+4,80);
+    notes(r.plan,{76,80,83,86},80);
+    require(!chords::update(r.state,r.controls,u));
+    require(!r.off(C)); require(!chords::update(r.state,r.controls,u)); // only C's chord stops
+    require(r.off(Minor7)); require(!chords::update(r.state,r.controls,u));
+    r.on(C,77); notes(r.plan,{72,76,79},77); // a new root uses what is still held
+    require(!chords::update(r.state,r.controls,u));
+    require(r.off(Major)); require(!chords::update(r.state,r.controls,u));
+    require(!r.off(C+4)); require(!r.off(C)); require(!chords::update(r.state,r.controls,u));
+}
 int main() {
     base_and_extensions(); live_modifiers(); modifier_updates_cover_all_roots(); modifier_edges(); extension_combinations(); roots_and_octaves(); voicing_timing_and_display();
     overlapping_roles_after_octave_shift();
     empty_retrigger_preserves_sounding_root();
     held_controls_retrigger_chords();
+    releases_never_retrigger();
     std::puts("Live modifier gestures, all seven extensions and combinations, octave shifts, held roots and display passed");
 }

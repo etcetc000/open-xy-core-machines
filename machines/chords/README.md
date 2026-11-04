@@ -1,9 +1,10 @@
 # Chords note player
 
 Hold a root with your right hand and shape its chord with the modifiers on
-its left. Either hand can play first. Pressing or releasing any chord type or
-extension regenerates and restrums every held root using the current modifiers.
-Modifiers alone are silent; releasing a root stops its chord. This live behavior
+its left. Either hand can play first. Pressing any chord type or extension
+regenerates and restrums every held root using the current modifiers. Releases
+never sound: lifting a modifier leaves held chords as they are, and releasing a
+root stops only its own chord. Modifiers alone are silent. This live behavior
 is always active; there are no play-style or extension-addition mode controls.
 
 At the default keyboard octave:
@@ -49,8 +50,9 @@ Defaults are str 0, dir up, voi 0 and spr off.
 
 Voicing moves one value per encoder detent. Changing voicing or spread
 regenerates every held root from the current modifiers and restarts its strum
-on the next player step. Modifier presses and releases also restart the whole
-strum, preserving each root's velocity, even if the selected notes are unchanged.
+on the next player step. Modifier presses also restart the whole strum,
+preserving each root's velocity, even if the selected notes are unchanged.
+Modifier releases restrum nothing; the next press or root uses what is still held.
 Repeated note-ons for an already-held modifier and the unused key do not
 retrigger. Releasing a root still stops its chord. If a change places every tone
 outside MIDI 0..127, that root keeps its last audible chord and name until a valid
@@ -72,7 +74,7 @@ as Arpeggio. For the original experimental player PR's projects, use
 preserves player identity, not the earlier modifier-note mapping.
 
 [tests/gestures.cpp](tests/gestures.cpp) covers every type/extension, all 128
-extension combinations, live modifier input/release behavior, capacity, octave shifts,
+extension combinations, live modifier presses, silent releases of either hand, capacity, octave shifts,
 voicing, strum and captured display state. Run with `sdk.py test --machine <folder>`.
 The engine is [player.cpp](player.cpp). Regenerate
 [panel.svg.fragment](panel.svg.fragment) with `python artwork.py`.
