@@ -1,6 +1,6 @@
 {
   "schema": 1,
   "kind": "player",
-  "description": "Shape held roots with left-hand chord types and extensions. Modifier, voicing and spread changes restrum the chord.",
+  "description": "Shape held roots with left-hand chord types and extensions. Modifier presses, voicing and spread changes restrum the chord; releases never do.",
   "sdk": "1.8"
 }
