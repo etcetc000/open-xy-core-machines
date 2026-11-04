@@ -13,6 +13,7 @@ of this repository. They also serve as worked examples for writing your own.
 | [Timestretch](machines/timestretch) | Sample engine | Tempo-locked, pitch-preserving loops on the stock drum page |
 | [Ring Mod](machines/ringmod) | Send effect | Ring modulation with the stock mixer handling Dry |
 | [Ping Pong](machines/pingpong) | Send effect | A ping-pong delay with stock delay's tempo-synced controls, in the send slot's scratch memory (SDK 1.2) |
+| [Ensemble](machines/ensemble) | Send effect | A stereo chorus on eight controls, drawn on the SDK's effect page as stock's FX page (SDK 1.8) |
 
 Each folder is one machine: `machine.json` (kind, SDK version and the numbers it
 prefers), `definition.json` (controls), its C++ and, for a synth, its artwork.
@@ -27,9 +28,14 @@ claims and actions it uses from the SDK's registry), `extension.cpp` and its
 tests in `tests/`. Extensions use only the public `<opxy/extension.hpp>` events and
 actions; see the SDK's [extensions guide](https://github.com/etcetc000/open-xy/blob/staging/docs/extensions.md).
 
-To write a machine of your own, start from the
-[machine template](https://github.com/etcetc000/open-xy-machine-template), not
-from this repository.
+To write a machine of your own, create its repository with the SDK
+(`python sdk.py new --repository`; see its
+[first machine guide](https://github.com/etcetc000/open-xy/blob/staging/docs/first-machine.md)),
+or copy one of these under your own ID and name:
+
+```sh
+python ../open-xy/sdk.py new --from machines/ensemble --id <id> --name "<Name>" --out ../<id>
+```
 
 ## Checks
 

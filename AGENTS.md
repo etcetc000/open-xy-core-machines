@@ -1,9 +1,9 @@
 # Instructions for agents
 
 This repository holds Open-XY's own machines and firmware extensions. It is not the SDK, and it is not
-where a new user's machine goes: a new machine starts from the
-[machine template](https://github.com/etcetc000/open-xy-machine-template) in a
-repository of its own.
+where a new user's machine goes: a new machine lives in a
+repository of its own, created with the SDK's `sdk.py new --repository` or
+copied from one of these machines with `sdk.py new --from`.
 
 - Clone the SDK beside this repository (`git clone
   https://github.com/etcetc000/open-xy ../open-xy`, default branch `staging`) and

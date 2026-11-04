@@ -1,0 +1,48 @@
+<g id="ensemble_panel">
+<!-- SDK effect page (opxy/effect_page.hpp), after stock's FX page: keep this block first.
+     As in stock's artwork, every shape is a plain fill on whole pixels, with no stroke.
+     The badge, "FX" and the name are stock's size and place; the badge's corners are
+     notched a pixel rather than curved. Bright and dim boxes and bars trade rows; the
+     meters are 1 px lines on the band. -->
+<path d="M0,0 L480,0 L480,220 L0,220 Z" fill="#000000"/>
+<path d="M181,25 L234,25 L234,26 L235,26 L235,54 L234,54 L234,55 L181,55 L181,54 L180,54 L180,26 L181,26 Z M181,26 L181,54 L234,54 L234,26 Z" fill="#CDCDCD"/>
+<text transform="matrix(1 0 0 1 188.45 47.5)" fill="#CDCDCD" font-family="UniversNextPro-Light" font-size="20px">FX</text>
+<text transform="matrix(1 0 0 1 250 46)" fill="#CDCDCD" font-family="UniversNextPro-Light" font-size="20px">ensemble</text>
+<path id="ensemble_node_0" transform="matrix(1 0 0 1 0 80)" d="M0,0 L480,0 L480,43 L0,43 Z" fill="#CDCDCD"/>
+<path id="ensemble_node_1" transform="matrix(1 0 0 1 40 80)" d="M0,0 L100,0 L100,43 L0,43 Z" fill="#000000"/>
+<path id="ensemble_node_2" transform="matrix(1 0 0 1 140 80)" d="M0,0 L100,0 L100,43 L0,43 Z" fill="#323232"/>
+<path id="ensemble_node_3" transform="matrix(1 0 0 1 240 80)" d="M0,0 L100,0 L100,43 L0,43 Z" fill="#969696"/>
+<path id="ensemble_node_4" transform="matrix(1 0 0 1 40 156)" d="M0,0 L100,0 L100,43 L0,43 Z" fill="#000000"/>
+<path id="ensemble_node_5" transform="matrix(1 0 0 1 140 156)" d="M0,0 L100,0 L100,43 L0,43 Z" fill="#0F0F0F"/>
+<path id="ensemble_node_6" transform="matrix(1 0 0 1 240 156)" d="M0,0 L100,0 L100,43 L0,43 Z" fill="#2D2D2D"/>
+<path id="ensemble_node_7" transform="matrix(1 0 0 1 340 156)" d="M0,0 L100,0 L100,43 L0,43 Z" fill="#3C3C3C"/>
+<path id="ensemble_node_8" transform="matrix(1 0 0 1 40 118)" d="M0,0 L100,0 L100,5 L0,5 Z" fill="#CDCDCD"/>
+<path id="ensemble_node_9" transform="matrix(1 0 0 1 140 118)" d="M0,0 L100,0 L100,5 L0,5 Z" fill="#000000"/>
+<path id="ensemble_node_10" transform="matrix(1 0 0 1 240 118)" d="M0,0 L100,0 L100,5 L0,5 Z" fill="#000000"/>
+<path id="ensemble_node_11" transform="matrix(1 0 0 1 340 118)" d="M0,0 L100,0 L100,5 L0,5 Z" fill="#000000"/>
+<path id="ensemble_node_12" transform="matrix(1 0 0 1 40 194)" d="M0,0 L100,0 L100,5 L0,5 Z" fill="#3C3C3C"/>
+<path id="ensemble_node_13" transform="matrix(1 0 0 1 140 194)" d="M0,0 L100,0 L100,5 L0,5 Z" fill="#000000"/>
+<path id="ensemble_node_14" transform="matrix(1 0 0 1 240 194)" d="M0,0 L100,0 L100,5 L0,5 Z" fill="#000000"/>
+<path id="ensemble_node_15" transform="matrix(1 0 0 1 340 194)" d="M0,0 L100,0 L100,5 L0,5 Z" fill="#000000"/>
+<path id="ensemble_node_16" transform="matrix(1 0 0 1 0 101)" d="M0,0 L40,0 L40,1 L0,1 Z" fill="#000000"/>
+<path id="ensemble_node_17" transform="matrix(1 0 0 1 440 101)" d="M0,0 L40,0 L40,1 L0,1 Z" fill="#000000"/>
+<text id="ensemble_text_0" transform="matrix(1 0 0 1 40 75)" fill="#CDCDCD" font-family="UniversNextPro-Light" font-size="10px">-</text>
+<text id="ensemble_text_1" transform="matrix(1 0 0 1 140 75)" fill="#CDCDCD" font-family="UniversNextPro-Light" font-size="10px">-</text>
+<text id="ensemble_text_2" transform="matrix(1 0 0 1 240 75)" fill="#CDCDCD" font-family="UniversNextPro-Light" font-size="10px">-</text>
+<text id="ensemble_text_3" transform="matrix(1 0 0 1 340 75)" fill="#CDCDCD" font-family="UniversNextPro-Light" font-size="10px">-</text>
+<text id="ensemble_text_4" transform="matrix(1 0 0 1 40 134)" fill="#CDCDCD" font-family="UniversNextPro-Light" font-size="10px">-</text>
+<text id="ensemble_text_5" transform="matrix(1 0 0 1 140 134)" fill="#CDCDCD" font-family="UniversNextPro-Light" font-size="10px">-</text>
+<text id="ensemble_text_6" transform="matrix(1 0 0 1 240 134)" fill="#CDCDCD" font-family="UniversNextPro-Light" font-size="10px">-</text>
+<text id="ensemble_text_7" transform="matrix(1 0 0 1 340 134)" fill="#CDCDCD" font-family="UniversNextPro-Light" font-size="10px">-</text>
+<text id="ensemble_text_8" transform="matrix(1 0 0 1 40 151)" fill="#3C3C3C" font-family="UniversNextPro-Light" font-size="10px">-</text>
+<text id="ensemble_text_9" transform="matrix(1 0 0 1 140 151)" fill="#3C3C3C" font-family="UniversNextPro-Light" font-size="10px">-</text>
+<text id="ensemble_text_10" transform="matrix(1 0 0 1 240 151)" fill="#3C3C3C" font-family="UniversNextPro-Light" font-size="10px">-</text>
+<text id="ensemble_text_11" transform="matrix(1 0 0 1 340 151)" fill="#3C3C3C" font-family="UniversNextPro-Light" font-size="10px">-</text>
+<text id="ensemble_text_12" transform="matrix(1 0 0 1 40 210)" fill="#3C3C3C" font-family="UniversNextPro-Light" font-size="10px">-</text>
+<text id="ensemble_text_13" transform="matrix(1 0 0 1 140 210)" fill="#3C3C3C" font-family="UniversNextPro-Light" font-size="10px">-</text>
+<text id="ensemble_text_14" transform="matrix(1 0 0 1 240 210)" fill="#3C3C3C" font-family="UniversNextPro-Light" font-size="10px">-</text>
+<text id="ensemble_text_15" transform="matrix(1 0 0 1 340 210)" fill="#3C3C3C" font-family="UniversNextPro-Light" font-size="10px">-</text>
+<text id="ensemble_text_16" transform="matrix(1 0 0 1 219.65 47.5)" fill="#CDCDCD" font-family="UniversNextPro-Light" font-size="20px">I</text>
+<!-- One palette entry for the effect's own drawing; the page paints none. -->
+<circle id="ensemble_palette_0" cx="640" cy="0" r="1" fill="#CDCDCD" stroke="#CDCDCD" stroke-width="1"/>
+</g>

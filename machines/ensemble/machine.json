@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "sdk": "1.8",
+  "kind": "effect",
+  "description": "A stereo chorus on eight controls, drawn on the SDK's effect page as stock's FX page.",
+  "dryParameter": "dry"
+}
