@@ -87,7 +87,7 @@ inline MacroOscillatorShape ShapeFromParameter(int32_t q31) {
 }
 
 // Inverse of the stock increment: Braids pitch in 1/128 semitone, MIDI 0 = 0.
-static int32_t PitchFromIncrement(uint32_t increment) {
+static inline __attribute__((always_inline)) int32_t PitchFromIncrement(uint32_t increment) {
   if (increment == 0) {
     return 0;
   }
@@ -238,15 +238,24 @@ void render(Voice& voice, Shared& state, opxy::u32 owner, opxy::Output out,
     // twice the note. Increments stay below half the sample rate (2^31).
     const uint32_t ratio = RatioQ16FromParameter(parameters[3]);
     const size_t chunk = PerCallState(shape) ? kMaxChunk : kFmChunk;
+    // The modulator's step depends only on the note's increment, which most
+    // blocks hold constant: recompute it only when the increment changes.
+    uint32_t previous_increment = 0, modulator_step = 0;
+    uint32_t fm_phase = voice.fm_phase;
     for (size_t offset = 0; offset < kBlockSize; offset += chunk) {
       const size_t size = kBlockSize - offset < chunk ? kBlockSize - offset : chunk;
       const uint32_t increment = pitch_increments[offset] < 0x80000000u ? pitch_increments[offset] : 0x7fffffffu;
-      const int32_t swing = (static_cast<int32_t>(depth) * ModulatorSine(voice.fm_phase)) >> 15;
+      if (increment != previous_increment || offset == 0) {
+        previous_increment = increment;
+        modulator_step = RatioIncrement(increment, ratio);
+      }
+      const int32_t swing = (static_cast<int32_t>(depth) * ModulatorSine(fm_phase)) >> 15;
       const uint32_t carrier = increment + static_cast<uint32_t>(static_cast<int32_t>(increment >> 15) * swing);
-      voice.fm_phase += RatioIncrement(increment, ratio) * static_cast<uint32_t>(size);
+      fm_phase += modulator_step * static_cast<uint32_t>(size);
       osc->set_pitch(ClampPitch(PitchFromIncrement(carrier) + drift));
       osc->Render(kNoSync, block + offset, size);
     }
+    voice.fm_phase = fm_phase;
   }
   WriteOutput(voice, block, out, kBlockSize, mask, step);
   voice.rng_state = stmlib::Random::state();
