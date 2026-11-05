@@ -5,6 +5,7 @@
 #include "optimized/exact_mix.hpp"
 #include "optimized/pitch_table.hpp"
 #include "optimized/exact_divide.hpp"
+#include <opxy/kernels/fold_pair.hpp>
 // Copyright 2012 Emilie Gillet.
 //
 // Author: Emilie Gillet (emilie.o.gillet@gmail.com)
