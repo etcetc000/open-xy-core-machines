@@ -28,6 +28,7 @@
 // Oscillator - digital style waveforms.
 
 #pragma once
+#include "optimized/clear_words.hpp"
 
 #include "stmlib/stmlib.h"
 
@@ -244,6 +245,9 @@ union DigitalOscillatorState {
   uint32_t modulator_phase;
 };
 
+static_assert(sizeof(DigitalOscillatorState) % 4 == 0 && alignof(DigitalOscillatorState) >= 4,
+              "Model state clears by whole aligned words");
+
 class DigitalOscillator {
  public:
   typedef void (DigitalOscillator::*RenderFn)(const uint8_t*, int16_t*, size_t);
@@ -252,7 +256,7 @@ class DigitalOscillator {
   ~DigitalOscillator() { }
   
   inline void Init() {
-    memset(&state_, 0, sizeof(state_));
+    macroosc::clear_words(&state_, sizeof(state_));
     pulse_[0].Init();
     pulse_[1].Init();
     pulse_[2].Init();

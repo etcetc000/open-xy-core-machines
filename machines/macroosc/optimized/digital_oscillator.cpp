@@ -1357,7 +1357,7 @@ void DigitalOscillator::RenderBowed(
   if (strike_) {
     macroosc::clear_words(dl_b, sizeof(delay_lines_->bowed.bridge));
     macroosc::clear_words(dl_n, sizeof(delay_lines_->bowed.neck));
-    memset(&state_, 0, sizeof(state_));
+    macroosc::clear_words(&state_, sizeof(state_));
     strike_ = false;
   }
   int16_t parameter_0 = 172 - (parameter_[0]  >> 8);
