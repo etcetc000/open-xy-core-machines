@@ -27,4 +27,6 @@ in `extension.json`, or apply it to an existing OS image:
 python ../open-xy/sdk.py settings apply --image os.ldr --extension extensions/release_floor --set release_floor=-48 --out ../build-idle-48
 ```
 
+For an open-xy OS built with another SDK, add `--stock-os <stock os.ldr>`.
+
 Needs the SDK's `release_floor` capability.
