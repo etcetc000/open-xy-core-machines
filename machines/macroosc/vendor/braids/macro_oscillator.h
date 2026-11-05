@@ -87,6 +87,9 @@ class MacroOscillator {
   }
 
   inline MacroOscillatorShape shape() const { return shape_; }
+
+  // OP-XY: the leading samples of plucked string k its strikes may write.
+  inline uint32_t pluck_extent(size_t k) const { return digital_oscillator_.pluck_extent(k); }
   
   void Render(const uint8_t* sync_buffer, int16_t* buffer, size_t size);
   

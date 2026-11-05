@@ -1308,23 +1308,22 @@ void DigitalOscillator::RenderPlucked(
         p->phase += p->phase_increment;
         size_t read_ptr = ((p->phase >> (22 + p->shift)) + 2) & p->mask;
         size_t write_ptr = p->write_ptr;
-        size_t num_loops = 0;
+        const size_t mask = p->mask, string_size = p->size;
         while (write_ptr != read_ptr) {
-          ++num_loops;
-          size_t next = (write_ptr + 1) & p->mask;
+          size_t next = (write_ptr + 1) & mask;
           int32_t a = dl[write_ptr];
           int32_t b = dl[next];
           uint32_t probability = Random::GetWord();
           if ((probability & 0xffff) <= update_probability) {
             int32_t sum = (a + b);
-            sum = sum < 0 ? -(-sum >> 1) : (sum >> 1);
+            sum = (sum + static_cast<int32_t>(static_cast<uint32_t>(sum) >> 31)) >> 1;
             if (loss) {
               sum = sum * (32768 - loss) >> 15;
             }
             dl[write_ptr] = sum;
           }
           if (write_ptr == 0) {
-            dl[p->size] = dl[0];
+            dl[string_size] = dl[0];
           }
           write_ptr = next;
         }

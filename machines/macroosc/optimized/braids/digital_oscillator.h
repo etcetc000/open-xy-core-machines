@@ -319,6 +319,9 @@ class DigitalOscillator {
     delay_lines_ = static_cast<DelayLines*>(delay_lines);
   }
 
+  // OP-XY: a struck string writes its first size + 1 samples, no more.
+  inline uint32_t pluck_extent(size_t k) const { return state_.plk[k].size + 1; }
+
   void Render(const uint8_t* sync, int16_t* buffer, size_t size);
   
  private:

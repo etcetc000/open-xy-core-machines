@@ -46,10 +46,30 @@ inline bool UsesDelayLines(MacroOscillatorShape shape) {
 }
 // How much of a delay-line slot each such model writes, and how much of that
 // it clears itself on every strike before reading (see DelayPool).
+// The plucked strings start every 1025 samples. Their mark holds, per string,
+// half the samples its strikes may have written, rounded up, in 10 bits.
+const uint32_t kPluckStride = 1025, kPluckWords = (sizeof(int16_t) * kPluckStride * braids::kNumPluckVoices + 3) / 4;
+static_assert(kPluckWords < DelayPool<DelayLines, 16>::kMarkWord && sizeof(DelayLines::comb) / 4 <= DelayPool<DelayLines, 16>::kMarkWord,
+              "No model's lines reach the mark word");
+static_assert(braids::kNumPluckVoices == 3 && (kPluckStride + 1) / 2 < 1024, "Three 10-bit string marks");
+inline uint32_t PluckMark(const MacroOscillator& osc) {
+  uint32_t mark = kMarkValid;
+  for (uint32_t k = 0; k < braids::kNumPluckVoices; ++k) mark |= ((osc.pluck_extent(k) + 1) >> 1) << (10 * k);
+  return mark;
+}
+// Clears only what the slot's last plucked owner marked: the rest is zero.
+inline void ClearPluckMarked(DelayLines* lines, uint32_t mark) {
+  uint32_t* words = reinterpret_cast<uint32_t*>(lines);
+  for (uint32_t k = 0; k < braids::kNumPluckVoices; ++k) {
+    const uint32_t start = k * kPluckStride, extent = 2 * ((mark >> (10 * k)) & 1023);
+    for (uint32_t i = start >> 1, end = (start + extent + 1) >> 1; i < end; ++i) words[i] = 0;
+  }
+}
+
 inline DelayUse DelayUseOf(MacroOscillatorShape shape) {
   switch (shape) {
     case braids::MACRO_OSC_SHAPE_SAW_COMB: return {sizeof(DelayLines::comb) / 4, 0};
-    case braids::MACRO_OSC_SHAPE_PLUCKED: return {(sizeof(int16_t) * 1025 * braids::kNumPluckVoices + 3) / 4, 0};
+    case braids::MACRO_OSC_SHAPE_PLUCKED: return {kPluckWords, 0};
     case braids::MACRO_OSC_SHAPE_BOWED: return {sizeof(DelayLines::bowed) / 4, sizeof(DelayLines::bowed) / 4};
     case braids::MACRO_OSC_SHAPE_BLOWN: return {sizeof(DelayLines::bore) / 4, sizeof(DelayLines::bore) / 4};
     default: return {sizeof(DelayLines::fluted) / 4, sizeof(DelayLines::fluted) / 4};
@@ -188,10 +208,15 @@ void render(Voice& voice, Shared& state, opxy::u32 owner, opxy::Output out,
   osc->set_parameters(Unipolar15(parameters[1]), Unipolar15(parameters[2]));
 
   bool changed = shape != osc->shape();
+  bool struck_pluck = false;
   osc->set_shape(shape);  // Strikes on change, as on the module.
   if (UsesDelayLines(shape)) {
     if (changed || voice.strike_pending) {
-      voice.delay_slot = state.delays.acquire(owner, voice.delay_slot, DelayUseOf(shape));
+      uint32_t mark = 0;
+      const bool plucked = shape == braids::MACRO_OSC_SHAPE_PLUCKED;
+      voice.delay_slot = state.delays.acquire(owner, voice.delay_slot, DelayUseOf(shape), plucked ? &mark : nullptr);
+      if (mark) ClearPluckMarked(state.delays.get(owner, voice.delay_slot), mark);
+      struck_pluck = plucked;
     }
   } else if (voice.delay_slot != 0) {
     state.delays.release(owner, voice.delay_slot);
@@ -257,6 +282,8 @@ void render(Voice& voice, Shared& state, opxy::u32 owner, opxy::Output out,
     }
     voice.fm_phase = fm_phase;
   }
+  // A strike sets its string's length during this block's first render call.
+  if (struck_pluck) state.delays.raise_mark(owner, voice.delay_slot, PluckMark(*osc));
   WriteOutput(voice, block, out, kBlockSize, mask, step);
   voice.rng_state = stmlib::Random::state();
 }
