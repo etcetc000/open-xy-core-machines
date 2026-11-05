@@ -10,8 +10,8 @@ fades out over one 1.45 ms block and frees its voice, so release-heavy parts
 render fewer voices and use less CPU.
 
 - The level is the envelope's own, before velocity, filter and track volume, so
-  the threshold is a level below the envelope's peak, not true dBFS: -40 dB here
-  often sounds like -50 dBFS or lower.
+  the threshold is a level below the envelope's peak, not true dBFS: at -40 dB
+  a tail usually ends around -50 dBFS or lower in the mix.
 - Held notes never stop early; only released notes do. Stolen-voice fades and
   drum kits stay stock.
 - The filter envelope shares the routine: its release stops at the same
