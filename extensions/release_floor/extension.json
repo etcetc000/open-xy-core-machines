@@ -1,0 +1,10 @@
+{
+  "id": "release_floor",
+  "name": "Idle threshold",
+  "description": "Ends quiet release tails sooner to free voices and CPU. Set the threshold in the builder, from -66 dB (stock) to -20 dB.",
+  "note": "Higher thresholds shorten long, soft releases.",
+  "claims": [],
+  "actions": [],
+  "capabilities": ["release_floor"],
+  "settings": {"release_floor": -40}
+}
