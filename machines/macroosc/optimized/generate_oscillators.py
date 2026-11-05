@@ -282,6 +282,7 @@ def generated(kind):
     if kind == 'analog':
         source = triple_mix.transform_analog(source)
         source = analog_state.transform(source)
+        source = '#include <opxy/kernels/fold_pair.hpp>\n' + source
         source = sync_dispatch.transform_analog(source)
         source = analog_division.transform(source)
     pitch_lookup = '''  uint32_t a = lut_oscillator_increments[ref_pitch >> 4];
