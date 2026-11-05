@@ -14,8 +14,9 @@ render fewer voices and use less CPU.
   a tail usually ends around -50 dBFS or lower in the mix.
 - Held notes never stop early; only released notes do. Stolen-voice fades and
   drum kits stay stock.
-- The filter envelope shares the routine: its release stops at the same
-  threshold, holding the last fraction of its depth.
+- The filter envelope shares the routine: its release ends at the same
+  threshold, fading the rest of its depth to zero over that block. At high
+  thresholds a resonant patch with a long filter release may tick.
 - A higher threshold audibly shortens long, soft releases (pads, reverb-like
   tails). -40 dB is the default here; -66 dB is stock behavior.
 
