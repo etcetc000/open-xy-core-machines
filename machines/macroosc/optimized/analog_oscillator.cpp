@@ -5,6 +5,7 @@
 #include "optimized/exact_mix.hpp"
 #include "optimized/pitch_table.hpp"
 #include "optimized/exact_divide.hpp"
+#include <opxy/kernels/blep_square.hpp>
 #include <opxy/kernels/fold_pair.hpp>
 // Copyright 2012 Emilie Gillet.
 //
@@ -1217,6 +1218,15 @@ void AnalogOscillator::RenderSquareTripleMix(
   }
 
 
+  // The SDK kernel runs the band-limited square loop (sync is unused here)
+  // whenever the state is in its range; the loop below covers the rest.
+  opxy::kernels::BlepSquare square = {phase, phase_increment, phase_increment_increment, next_sample_, high};
+  if (opxy::kernels::blep_square(square, buffer, size, 21, true)) {
+    phase_=square.phase;high_=square.high;
+    next_sample_ = square.next_sample;
+    previous_phase_increment_ = square.increment;
+    return;
+  }
   int32_t next_sample = next_sample_;
   while (size--) {
     bool sync_reset = false;
@@ -1328,6 +1338,15 @@ void AnalogOscillator::RenderSquareTripleFirst(
   }
 
 
+  // The SDK kernel runs the band-limited square loop (sync is unused here)
+  // whenever the state is in its range; the loop below covers the rest.
+  opxy::kernels::BlepSquare square = {phase, phase_increment, phase_increment_increment, next_sample_, high};
+  if (opxy::kernels::blep_square(square, buffer, size, 21, false)) {
+    phase_=square.phase;high_=square.high;
+    next_sample_ = square.next_sample;
+    previous_phase_increment_ = square.increment;
+    return;
+  }
   int32_t next_sample = next_sample_;
   while (size--) {
     bool sync_reset = false;
@@ -1839,6 +1858,47 @@ void AnalogOscillator::RenderTripleMix(
     case OSC_SHAPE_SAW: RenderSawTripleMix(sync_in, buffer, sync_out, size); break;
     default: break;
   }
+}
+void AnalogOscillator::RenderSquareTriple(AnalogOscillator* osc, int16_t* __restrict__ buffer, size_t size) {
+  // RenderTripleFirst/Mix's preparation and the interpolated increment, for
+  // each oscillator; one SDK kernel call then renders all three when every one
+  // is in its range (the steady shortcut below is an exact special case of the
+  // same loop). Otherwise each renders in turn exactly as before.
+  opxy::kernels::BlepSquare square[3];
+  opxy::kernels::BlepSquare* const squares[3] = {&square[0], &square[1], &square[2]};
+  for (size_t i = 0; i < 3; ++i) {
+    AnalogOscillator& o = osc[i];
+    if (o.shape_ != o.previous_shape_) {
+      o.Init();
+      o.previous_shape_ = o.shape_;
+    }
+    o.phase_increment_ = o.ComputePhaseIncrement(o.pitch_);
+    if (o.pitch_ > kHighestNote) {
+      o.pitch_ = kHighestNote;
+    } else if (o.pitch_ < 0) {
+      o.pitch_ = 0;
+    }
+    const uint32_t increment = o.previous_phase_increment_;
+    square[i].phase = o.phase_;
+    square[i].increment = increment;
+    square[i].increment_step = increment < o.phase_increment_
+        ? macroosc::chunk_math::phase_delta_inline(o.phase_increment_ - increment, size)
+        : ~macroosc::chunk_math::phase_delta_inline(increment - o.phase_increment_, size);
+    square[i].next_sample = o.next_sample_;
+    square[i].high = o.high_;
+  }
+  if (opxy::kernels::blep_squares(squares, 3, buffer, size, 21)) {
+    for (size_t i = 0; i < 3; ++i) {
+      osc[i].phase_ = square[i].phase;
+      osc[i].high_ = square[i].high;
+      osc[i].next_sample_ = square[i].next_sample;
+      osc[i].previous_phase_increment_ = square[i].increment;
+    }
+    return;
+  }
+  osc[0].RenderSquareTripleFirst(nullptr, buffer, nullptr, size);
+  osc[1].RenderSquareTripleMix(nullptr, buffer, nullptr, size);
+  osc[2].RenderSquareTripleMix(nullptr, buffer, nullptr, size);
 }
 void AnalogOscillator::RenderTripleFirst(
     const uint8_t* sync_in,

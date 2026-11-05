@@ -226,6 +226,10 @@ void MacroOscillator::RenderTriple(
   analog_oscillator_[1].set_shape(base_shape);
   analog_oscillator_[2].set_shape(base_shape);
 
+  if (base_shape == OSC_SHAPE_SQUARE) {
+    AnalogOscillator::RenderSquareTriple(analog_oscillator_, buffer, size);
+    return;
+  }
   if (base_shape == OSC_SHAPE_SQUARE || base_shape == OSC_SHAPE_SAW) {
     analog_oscillator_[0].RenderTripleFirst(nullptr, buffer, nullptr, size);
     for (size_t i = 1; i < 3; ++i) {
