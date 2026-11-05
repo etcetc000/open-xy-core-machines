@@ -18,7 +18,8 @@ render fewer voices and use less CPU.
   threshold, fading the rest of its depth to zero over that block. At high
   thresholds a resonant patch with a long filter release may tick.
 - A higher threshold audibly shortens long, soft releases (pads, reverb-like
-  tails). -40 dB is the default here; -66 dB is stock behavior.
+  tails). A note whose sustain is already below the threshold loses its whole
+  release when the key is let go. -40 dB is the default here; -66 dB is stock behavior.
 
 Choose the value in the builder's Extensions step, set `settings.release_floor`
 in `extension.json`, or apply it to an existing OS image:
