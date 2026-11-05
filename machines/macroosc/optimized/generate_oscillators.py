@@ -30,6 +30,7 @@ import analog_division
 import fof_render
 import digital_filter_render
 import byte_mix_render
+import delay_clear_render
 
 HERE = Path(__file__).resolve().parent
 SOURCES = {
@@ -300,6 +301,7 @@ def generated(kind):
         source = fof_render.transform(source)
         source = digital_filter_render.transform(source)
         source = byte_mix_render.transform(source)
+        source = delay_clear_render.transform(source)
     source = restrict_buffers(source)
     source = '\n'.join(line.rstrip() for line in source.splitlines()) + '\n'
     source = dispatch_render.transform(source, kind)

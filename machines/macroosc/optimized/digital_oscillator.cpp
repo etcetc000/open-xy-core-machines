@@ -5,6 +5,7 @@
 #include "optimized/struck_drum_math.hpp"
 #include "optimized/packed_tables.hpp"
 #include "optimized/exact_mix.hpp"
+#include "optimized/clear_words.hpp"
 #include "optimized/byte_mix.hpp"
 #include "optimized/exact_divide.hpp"
 #include "optimized/swarm_pitch.hpp"
@@ -1354,8 +1355,8 @@ void DigitalOscillator::RenderBowed(
   int8_t* dl_n = delay_lines_->bowed.neck;
 
   if (strike_) {
-    memset(dl_b, 0, sizeof(delay_lines_->bowed.bridge));
-    memset(dl_n, 0, sizeof(delay_lines_->bowed.neck));
+    macroosc::clear_words(dl_b, sizeof(delay_lines_->bowed.bridge));
+    macroosc::clear_words(dl_n, sizeof(delay_lines_->bowed.neck));
     memset(&state_, 0, sizeof(state_));
     strike_ = false;
   }
@@ -1461,7 +1462,7 @@ void DigitalOscillator::RenderBlown(
 
   int16_t* dl = delay_lines_->bore;
   if (strike_) {
-    memset(dl, 0, sizeof(delay_lines_->bore));
+    macroosc::clear_words(dl, sizeof(delay_lines_->bore));
     strike_ = false;
   }
 
@@ -1532,8 +1533,8 @@ void DigitalOscillator::RenderFluted(
 
   if (strike_) {
     excitation_ptr = 0;
-    memset(dl_b, 0, sizeof(delay_lines_->fluted.bore));
-    memset(dl_j, 0, sizeof(delay_lines_->fluted.jet));
+    macroosc::clear_words(dl_b, sizeof(delay_lines_->fluted.bore));
+    macroosc::clear_words(dl_j, sizeof(delay_lines_->fluted.jet));
     lp_state = 0;
     strike_ = false;
   }
