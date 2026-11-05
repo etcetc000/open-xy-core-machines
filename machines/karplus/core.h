@@ -36,6 +36,10 @@ struct Pluck {
 };
 // Two strings, the second tuned apart by Spread; at Spread 0 they are one.
 struct Voice {
+    // No part of a new voice needs clearing: initialize, start and a note's
+    // pluck set everything the strings read (SDKs that clear only a declared
+    // prefix skip the 8 KB lines; others clear the whole voice as before).
+    static constexpr unsigned zeroed_bytes = 0;
     String strings[2];
     opxy::u32 write;    // next write position, shared by both lines
     opxy::u32 seed;     // excitation noise
