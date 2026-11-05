@@ -933,6 +933,8 @@ void AnalogOscillator::RenderVariableSawNoSync(
     int16_t* __restrict__ buffer,
     uint8_t* sync_out,
     size_t size) {
+  uint32_t phase=phase_;
+  bool high=high_;
   BEGIN_INTERPOLATE_PHASE_INCREMENT
   int32_t next_sample = next_sample_;
   if (parameter_ < 1024) {
@@ -953,10 +955,10 @@ void AnalogOscillator::RenderVariableSawNoSync(
     if (0) {
       // sync_in contain the fractional reset time.
       reset_time = static_cast<uint32_t>(0 - 1) << 9;
-      uint32_t phase_at_reset = phase_ + \
+      uint32_t phase_at_reset = phase + \
           (65535 - reset_time) * (phase_increment >> 16);
       sync_reset = true;
-      if (phase_at_reset < phase_ || (!high_ && phase_at_reset >= pw)) {
+      if (phase_at_reset < phase || (!high && phase_at_reset >= pw)) {
         transition_during_reset = true;
       }
       int32_t before = (phase_at_reset >> 18) + ((phase_at_reset - pw) >> 18);
@@ -967,50 +969,51 @@ void AnalogOscillator::RenderVariableSawNoSync(
     }
 
 
-    phase_ += phase_increment;
-    if (phase_ < phase_increment) {
+    phase += phase_increment;
+    if (phase < phase_increment) {
       self_reset = true;
     }
 
     if (false) {
-      if (phase_ < phase_increment) {
-        *sync_out++ = macroosc::transition_quotient(phase_, phase_increment >> 7) + 1;
+      if (phase < phase_increment) {
+        *sync_out++ = macroosc::transition_quotient(phase, phase_increment >> 7) + 1;
       } else {
         *sync_out++ = 0;
       }
     }
 
     while (transition_during_reset || !sync_reset) {
-      if (!high_) {
-        if (phase_ < pw) {
+      if (!high) {
+        if (phase < pw) {
           break;
         }
-        uint32_t t = macroosc::transition_quotient(phase_ - pw, phase_increment >> 16);
+        uint32_t t = macroosc::transition_quotient(phase - pw, phase_increment >> 16);
         this_sample -= ThisBlepSample(t) >> 1;
         next_sample -= NextBlepSample(t) >> 1;
-        high_ = true;
+        high = true;
       }
-      if (high_) {
+      if (high) {
         if (!self_reset) {
           break;
         }
         self_reset = false;
-        uint32_t t = macroosc::transition_quotient(phase_, phase_increment >> 16);
+        uint32_t t = macroosc::transition_quotient(phase, phase_increment >> 16);
         this_sample -= ThisBlepSample(t) >> 1;
         next_sample -= NextBlepSample(t) >> 1;
-        high_ = false;
+        high = false;
       }
     }
 
     if (sync_reset) {
-      phase_ = reset_time * (phase_increment >> 16);
-      high_ = false;
+      phase = reset_time * (phase_increment >> 16);
+      high = false;
     }
 
-    next_sample += phase_ >> 18;
-    next_sample += (phase_ - pw) >> 18;
+    next_sample += phase >> 18;
+    next_sample += (phase - pw) >> 18;
     *buffer++ = (this_sample - 16384) << 1;
   }
+  phase_=phase;high_=high;
   next_sample_ = next_sample;
   END_INTERPOLATE_PHASE_INCREMENT
 }
