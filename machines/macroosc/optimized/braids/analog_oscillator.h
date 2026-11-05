@@ -114,6 +114,7 @@ class AnalogOscillator {
   void RenderSyncSlave(const uint8_t*, int16_t*, uint8_t*, size_t);
 
   void RenderFoldPair(AnalogOscillator&, int16_t*, size_t, int32_t, int32_t);
+  void RenderSquareSyncPair(AnalogOscillator&, int16_t*, size_t, int32_t, int32_t, int32_t);
 
   void RenderTripleMix(const uint8_t*, int16_t*, uint8_t*, size_t);
   void RenderTripleFirst(const uint8_t*, int16_t*, uint8_t*, size_t);

@@ -291,8 +291,12 @@ void MacroOscillator::RenderDualSync(
   analog_oscillator_[1].set_pitch(pitch_ + (parameter_[0] >> 2));
 
   if (base_shape == OSC_SHAPE_SQUARE) {
-    analog_oscillator_[0].RenderSquareSyncMaster(nullptr, buffer, sync_buffer_, size);
-    analog_oscillator_[1].RenderSquareSyncSlave(sync_buffer_, temp_buffer_, nullptr, size);
+    // Both squares and the crossfade below, in one pass.
+    analog_oscillator_[0].RenderSquareSyncPair(analog_oscillator_[1], buffer, size,
+        previous_parameter_[1], parameter_[1] - previous_parameter_[1],
+        macroosc::chunk_math::parameter1_increment(size));
+    previous_parameter_[1] = parameter_[1];
+    return;
   } else {
     analog_oscillator_[0].RenderSawSyncMaster(nullptr, buffer, sync_buffer_, size);
     analog_oscillator_[1].RenderSawSyncSlave(sync_buffer_, temp_buffer_, nullptr, size);

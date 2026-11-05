@@ -4,6 +4,7 @@
 #include "optimized/packed_tables.hpp"
 #include "optimized/exact_mix.hpp"
 #include "optimized/pitch_table.hpp"
+#include <opxy/kernels/square_sync.hpp>
 #include "optimized/exact_divide.hpp"
 #include <opxy/kernels/blep_square.hpp>
 #include <opxy/kernels/fold_pair.hpp>
@@ -1182,6 +1183,7 @@ void AnalogOscillator::RenderBuzzNoSync(
 
 
 #include "optimized/fold_pair.hpp"
+#include "optimized/square_sync_pair.hpp"
 
 void AnalogOscillator::RenderSquareTripleMix(
     const uint8_t* sync_in,
