@@ -84,9 +84,10 @@ inline void fold_pair_reference(FoldPair& s, i16* out, unsigned size) {
 // passes 32767. Calls outside it take the reference.
 inline bool fold_pair_in_range(const FoldPair& s, unsigned size) {
     auto control = [](i32 start, i32 delta) {
-        return static_cast<u32>(start) <= 32767u && static_cast<u32>(start + delta) <= 32767u;
+        return static_cast<u32>(start) <= 32767u && static_cast<u32>(start) + static_cast<u32>(delta) <= 32767u;
     };
-    return size - 1u < 24u && s.xfade_step >= 0 && s.xfade_step * static_cast<i32>(size) <= 32767 &&
+    // The step is bounded by a division: a product could overflow for a wide step.
+    return size - 1u < 24u && s.xfade_step >= 0 && s.xfade_step <= 32767 / static_cast<i32>(size) &&
            control(s.sine_start, s.sine_delta) && control(s.triangle_start, s.triangle_delta) &&
            control(s.balance_start, s.balance_delta);
 }
