@@ -1,12 +1,12 @@
-"""Harmonics: the twelve-partial loop as the SDK's additive kernel.
+"""Harmonics: the twelve-partial loop as the native additive routine.
 
-opxy::kernels::additive defines the same output pair: per pair the phase steps,
+macroosc::native::additive defines the same output pair: per pair the phase steps,
 each partial k adds floor(sine(k * phase) * a_k / 2^15) and then glides by
 (target_k - a_k) >> 8, and the pair is (out + previous) >> 1, then out. The
-kernel keeps amplitudes and targets two to a word, so the state holds them
+routine keeps amplitudes and targets two to a word, so the state holds them
 packed: the same 0..32767 values, cleared to zero as before. Spectrum
 normalization keeps the targets' sum at most 32767; the one-pole keeps the
-amplitudes' sum there, so the kernel's 16-bit lane sums are the C sums.
+amplitudes' sum there, so the routine's 16-bit lane sums are the C sums.
 """
 
 START = 'static __attribute__((noinline)) int32_t RenderHarmonicSample('
@@ -28,9 +28,9 @@ NEW = '''void DigitalOscillator::RenderHarmonics(
           static_cast<uint32_t>(static_cast<uint16_t>(state_.hrm.target[2 * j + 1])) << 16;
     }
   }
-  // The SDK's additive kernel. The adapter supplies zero external sync for
+  // The native additive routine. The adapter supplies zero external sync for
   // this renderer.
-  opxy::kernels::Additive additive;
+  macroosc::native::Additive additive;
   additive.phase = phase_;
   additive.increment = phase_increment_ << 1;
   additive.previous = state_.add.previous_sample;
@@ -48,7 +48,7 @@ NEW = '''void DigitalOscillator::RenderHarmonics(
     }
     additive.target = masked_targets;
   }
-  opxy::kernels::additive(additive, buffer, size >> 1);
+  macroosc::native::additive(additive, buffer, size >> 1);
   state_.add.previous_sample = additive.previous;
   phase_ = additive.phase;
 }
@@ -64,7 +64,7 @@ STATE_OLD = '''struct HarmonicsState {
 
 STATE_NEW = '''struct HarmonicsState {
   // OP-XY: amplitudes packed two to a word (harmonic 2j + 1 low, 2j + 2
-  // high) for the SDK's additive kernel, with the targets packed the same.
+  // high) for the native additive routine, with the targets packed the same.
   uint32_t amplitude[kNumAdditiveHarmonics / 2];
   // OP-XY: spectrum cached per parameter pair; Init() clears the key.
   uint32_t key;
@@ -78,7 +78,7 @@ def transform(source):
     end = source.index(END, start)
     if source.count(START) != 1 or 'void DigitalOscillator::RenderHarmonics(' not in source[start:end]:
         raise ValueError('Harmonics renderer changed')
-    return '#include <opxy/kernels/additive.hpp>\n' + source[:start] + NEW + source[end:]
+    return '#include "native/additive.hpp"\n' + source[:start] + NEW + source[end:]
 
 
 def transform_header(header):

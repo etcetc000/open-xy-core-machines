@@ -50,6 +50,7 @@ python ../open-xy/tools/serve_harness.py --preview ../previews/macroosc-001
 | [lofi.h](lofi.h) | Bits, Rate and Drift scaling shared by sound and screen |
 | [pitch.h](pitch.h), [vendor/braids/resources.cc](vendor/braids/resources.cc) | 44.1 kHz pitch and Braids tables |
 | [machine.json](machine.json) | Kind, identity, builder glyph and the vendored translation units |
+| [native/](native) | Hand-written Blackfin routines for five hot loops, each beside the C reference that defines it |
 
 The SDK supplies storage, callbacks and rendering backends. Callbacks and the
 vendor RNG swap require serialized access. See [engine API](https://github.com/etcetc000/open-xy/blob/staging/docs/api.md).
@@ -98,6 +99,19 @@ Output is int16 scaled to Q31 using the level described above.
 Five models (SAW_COMB, PLUK, BOWD, BLOW, FLUT) lease an 8,200-byte delay line
 from a shared pool of 16. When the pool is full the oldest lease is stolen and
 its voice falls silent until restruck.
+
+## Native routines
+
+Five sample loops run as hand-written Blackfin routines on the device, the
+SDK's [native routines](https://github.com/etcetc000/open-xy/blob/staging/docs/api.md#native-routines):
+`fold_pair` (Sine Tri Fold), `blep_square` (Triple Square), `square_sync`
+(Square Sync), `wave_quad` (Wave Chords) and `additive` (Harmonics). Each `native/<name>.s` sits beside
+`native/<name>.hpp`, whose C reference defines what it computes and runs on the
+host and in the browser, and `native/<name>.json`, its symbol, stack and
+supported range. Calls outside a routine's range run the reference on the
+device too. The routines were matched against their references sample for
+sample on the BF707 functional simulator; `tests/native_*.cpp` check the
+references against the loops they replace.
 
 The [performance checks](performance/README.md) compare all models against
 the original adapter and describe the exact setup optimizations and the

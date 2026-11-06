@@ -1,18 +1,18 @@
-"""Triple Square: the band-limited square loops in the SDK blep_square kernel.
+"""Triple Square: the band-limited square loops in the native blep_square routine.
 
-opxy::kernels::blep_square runs RenderSquareTripleFirst/Mix's original sample
+macroosc::native::blep_square runs RenderSquareTripleFirst/Mix's original sample
 loop (same increment interpolation, edge times and polynomial steps) when the
-state is in the kernel's range; the original loop stays as the fallback.
+state is in the routine's range; the original loop stays as the fallback.
 AnalogOscillator::RenderSquareTriple prepares all three oscillators as
-RenderTripleFirst/Mix would and renders them in one kernel call.
+RenderTripleFirst/Mix would and renders them in one routine call.
 """
 
 LOOP = '  int32_t next_sample = next_sample_;\n  while (size--) {\n'
 
-KERNEL = '''  // The SDK kernel runs the band-limited square loop (sync is unused here)
+KERNEL = '''  // The native routine runs the band-limited square loop (sync is unused here)
   // whenever the state is in its range; the loop below covers the rest.
-  opxy::kernels::BlepSquare square = {phase, phase_increment, phase_increment_increment, next_sample_, high};
-  if (opxy::kernels::blep_square(square, buffer, size, 21, MIX)) {
+  macroosc::native::BlepSquare square = {phase, phase_increment, phase_increment_increment, next_sample_, high};
+  if (macroosc::native::blep_square(square, buffer, size, 21, MIX)) {
     phase_=square.phase;high_=square.high;
     next_sample_ = square.next_sample;
     previous_phase_increment_ = square.increment;
@@ -22,11 +22,11 @@ KERNEL = '''  // The SDK kernel runs the band-limited square loop (sync is unuse
 
 TRIPLE = r'''void AnalogOscillator::RenderSquareTriple(AnalogOscillator* osc, int16_t* __restrict__ buffer, size_t size) {
   // RenderTripleFirst/Mix's preparation and the interpolated increment, for
-  // each oscillator; one SDK kernel call then renders all three when every one
+  // each oscillator; one native routine call then renders all three when every one
   // is in its range (the steady shortcut below is an exact special case of the
   // same loop). Otherwise each renders in turn exactly as before.
-  opxy::kernels::BlepSquare square[3];
-  opxy::kernels::BlepSquare* const squares[3] = {&square[0], &square[1], &square[2]};
+  macroosc::native::BlepSquare square[3];
+  macroosc::native::BlepSquare* const squares[3] = {&square[0], &square[1], &square[2]};
   for (size_t i = 0; i < 3; ++i) {
     AnalogOscillator& o = osc[i];
     if (o.shape_ != o.previous_shape_) {
@@ -48,7 +48,7 @@ TRIPLE = r'''void AnalogOscillator::RenderSquareTriple(AnalogOscillator* osc, in
     square[i].next_sample = o.next_sample_;
     square[i].high = o.high_;
   }
-  if (opxy::kernels::blep_squares(squares, 3, buffer, size, 21)) {
+  if (macroosc::native::blep_squares(squares, 3, buffer, size, 21)) {
     for (size_t i = 0; i < 3; ++i) {
       osc[i].phase_ = square[i].phase;
       osc[i].high_ = square[i].high;
@@ -73,7 +73,7 @@ MACRO_NEW = '''  if (base_shape == OSC_SHAPE_SQUARE) {
 ''' + MACRO_OLD
 
 DECLARATION = '  void RenderPairNoSync(AnalogOscillator&, int16_t*, int16_t*, size_t);\n'
-FOLD_INCLUDE = '#include <opxy/kernels/fold_pair.hpp>\n'
+FOLD_INCLUDE = '#include "native/fold_pair.hpp"\n'
 
 
 def transform_analog(source):
@@ -87,7 +87,7 @@ def transform_analog(source):
     if source.count(anchor) != 1 or source.count(FOLD_INCLUDE) != 1:
         raise ValueError('Triple renderers changed')
     source = source.replace(anchor, TRIPLE + anchor)
-    return source.replace(FOLD_INCLUDE, '#include <opxy/kernels/blep_square.hpp>\n' + FOLD_INCLUDE)
+    return source.replace(FOLD_INCLUDE, '#include "native/blep_square.hpp"\n' + FOLD_INCLUDE)
 
 
 def transform_macro(source):

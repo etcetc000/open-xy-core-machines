@@ -288,7 +288,7 @@ def generated(kind):
     if kind == 'analog':
         source = triple_mix.transform_analog(source)
         source = analog_state.transform(source)
-        source = '#include <opxy/kernels/fold_pair.hpp>\n' + source
+        source = '#include "native/fold_pair.hpp"\n' + source
         source = sync_dispatch.transform_analog(source)
         source = analog_division.transform(source)
         source = square_sync_render.transform_analog(source)

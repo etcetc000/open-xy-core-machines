@@ -4,10 +4,10 @@
 #include "optimized/packed_tables.hpp"
 #include "optimized/exact_mix.hpp"
 #include "optimized/pitch_table.hpp"
-#include <opxy/kernels/square_sync.hpp>
+#include "native/square_sync.hpp"
 #include "optimized/exact_divide.hpp"
-#include <opxy/kernels/blep_square.hpp>
-#include <opxy/kernels/fold_pair.hpp>
+#include "native/blep_square.hpp"
+#include "native/fold_pair.hpp"
 // Copyright 2012 Emilie Gillet.
 //
 // Author: Emilie Gillet (emilie.o.gillet@gmail.com)
@@ -1220,10 +1220,10 @@ void AnalogOscillator::RenderSquareTripleMix(
   }
 
 
-  // The SDK kernel runs the band-limited square loop (sync is unused here)
+  // The native routine runs the band-limited square loop (sync is unused here)
   // whenever the state is in its range; the loop below covers the rest.
-  opxy::kernels::BlepSquare square = {phase, phase_increment, phase_increment_increment, next_sample_, high};
-  if (opxy::kernels::blep_square(square, buffer, size, 21, true)) {
+  macroosc::native::BlepSquare square = {phase, phase_increment, phase_increment_increment, next_sample_, high};
+  if (macroosc::native::blep_square(square, buffer, size, 21, true)) {
     phase_=square.phase;high_=square.high;
     next_sample_ = square.next_sample;
     previous_phase_increment_ = square.increment;
@@ -1340,10 +1340,10 @@ void AnalogOscillator::RenderSquareTripleFirst(
   }
 
 
-  // The SDK kernel runs the band-limited square loop (sync is unused here)
+  // The native routine runs the band-limited square loop (sync is unused here)
   // whenever the state is in its range; the loop below covers the rest.
-  opxy::kernels::BlepSquare square = {phase, phase_increment, phase_increment_increment, next_sample_, high};
-  if (opxy::kernels::blep_square(square, buffer, size, 21, false)) {
+  macroosc::native::BlepSquare square = {phase, phase_increment, phase_increment_increment, next_sample_, high};
+  if (macroosc::native::blep_square(square, buffer, size, 21, false)) {
     phase_=square.phase;high_=square.high;
     next_sample_ = square.next_sample;
     previous_phase_increment_ = square.increment;
@@ -1863,11 +1863,11 @@ void AnalogOscillator::RenderTripleMix(
 }
 void AnalogOscillator::RenderSquareTriple(AnalogOscillator* osc, int16_t* __restrict__ buffer, size_t size) {
   // RenderTripleFirst/Mix's preparation and the interpolated increment, for
-  // each oscillator; one SDK kernel call then renders all three when every one
+  // each oscillator; one native routine call then renders all three when every one
   // is in its range (the steady shortcut below is an exact special case of the
   // same loop). Otherwise each renders in turn exactly as before.
-  opxy::kernels::BlepSquare square[3];
-  opxy::kernels::BlepSquare* const squares[3] = {&square[0], &square[1], &square[2]};
+  macroosc::native::BlepSquare square[3];
+  macroosc::native::BlepSquare* const squares[3] = {&square[0], &square[1], &square[2]};
   for (size_t i = 0; i < 3; ++i) {
     AnalogOscillator& o = osc[i];
     if (o.shape_ != o.previous_shape_) {
@@ -1889,7 +1889,7 @@ void AnalogOscillator::RenderSquareTriple(AnalogOscillator* osc, int16_t* __rest
     square[i].next_sample = o.next_sample_;
     square[i].high = o.high_;
   }
-  if (opxy::kernels::blep_squares(squares, 3, buffer, size, 21)) {
+  if (macroosc::native::blep_squares(squares, 3, buffer, size, 21)) {
     for (size_t i = 0; i < 3; ++i) {
       osc[i].phase_ = square[i].phase;
       osc[i].high_ = square[i].high;

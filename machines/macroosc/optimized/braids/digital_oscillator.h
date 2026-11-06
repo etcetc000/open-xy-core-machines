@@ -129,7 +129,7 @@ struct SawSwarmState {
 
 struct HarmonicsState {
   // OP-XY: amplitudes packed two to a word (harmonic 2j + 1 low, 2j + 2
-  // high) for the SDK's additive kernel, with the targets packed the same.
+  // high) for the native additive routine, with the targets packed the same.
   uint32_t amplitude[kNumAdditiveHarmonics / 2];
   // OP-XY: spectrum cached per parameter pair; Init() clears the key.
   uint32_t key;

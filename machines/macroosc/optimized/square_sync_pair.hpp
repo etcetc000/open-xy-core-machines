@@ -4,15 +4,15 @@
 #pragma once
 
 // Included within namespace braids by analog_oscillator.cpp, after
-// <opxy/kernels/square_sync.hpp>. The master and slave keep their own
+// "native/square_sync.hpp". The master and slave keep their own
 // shape-change initialization, pitch clamp and increment interpolation; the
-// SDK kernel then runs both sample loops and the crossfade the macro
+// native routine then runs both sample loops and the crossfade the macro
 // oscillator applied to their two buffers, with the same per-sample order.
 // The caller passes the crossfade step (its parameter interpolation's).
 void AnalogOscillator::RenderSquareSyncPair(AnalogOscillator& slave, int16_t* __restrict__ buffer, size_t size,
                                            int32_t balance_start, int32_t balance_delta, int32_t xfade_step) {
-  opxy::kernels::SquareSync pair;
-  auto prepare = [size](AnalogOscillator& osc, opxy::kernels::SquareSyncOscillator& o) {
+  macroosc::native::SquareSync pair;
+  auto prepare = [size](AnalogOscillator& osc, macroosc::native::SquareSyncOscillator& o) {
     if (osc.shape_ != osc.previous_shape_) {
       osc.Init(); osc.previous_shape_ = osc.shape_;
     }
@@ -32,8 +32,8 @@ void AnalogOscillator::RenderSquareSyncPair(AnalogOscillator& slave, int16_t* __
   pair.balance_start = balance_start;
   pair.balance_delta = balance_delta;
   pair.xfade_step = xfade_step;
-  opxy::kernels::square_sync(pair, buffer, size);
-  auto finish = [](AnalogOscillator& osc, const opxy::kernels::SquareSyncOscillator& o) {
+  macroosc::native::square_sync(pair, buffer, size);
+  auto finish = [](AnalogOscillator& osc, const macroosc::native::SquareSyncOscillator& o) {
     osc.phase_ = o.phase;
     osc.previous_phase_increment_ = o.increment;
     osc.next_sample_ = o.next;

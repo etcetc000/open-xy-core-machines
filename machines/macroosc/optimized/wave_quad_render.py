@@ -1,8 +1,8 @@
-"""Wave Chords: the crossfaded four-stream loop as the SDK's wave_quad kernel.
+"""Wave Chords: the crossfaded four-stream loop as the native wave_quad routine.
 
 Between exact wave positions every stream reads both waves at phase >> 1 and
 crossfades them by a nonzero 16-bit balance; the sample is the four values'
-sum >> 2. opxy::kernels::wave_quad defines exactly that sum, so the phases,
+sum >> 2. macroosc::native::wave_quad defines exactly that sum, so the phases,
 reads, crossfade rounding and final shift are unchanged.
 """
 
@@ -31,9 +31,9 @@ OLD = '''  } else {
   }'''
 
 NEW = '''  } else {
-    // The SDK's four-stream crossfade: the same per-stream reads, crossfades
+    // The native four-stream crossfade: the same per-stream reads, crossfades
     // and sum >> 2 as wave_crossfade, in one pass.
-    opxy::kernels::WaveQuad quad;
+    macroosc::native::WaveQuad quad;
     quad.a = wave_a;
     quad.b = wave_b;
     quad.phase[0] = phase_0;
@@ -45,7 +45,7 @@ NEW = '''  } else {
     quad.increment[2] = phase_increment[1];
     quad.increment[3] = phase_increment[2];
     quad.balance = wave_xfade;
-    opxy::kernels::wave_quad(quad, buffer, size);
+    macroosc::native::wave_quad(quad, buffer, size);
     for (unsigned i = 0; i < 4; ++i) state_.saw.phase[i] = quad.phase[i];
   }'''
 
@@ -53,4 +53,4 @@ NEW = '''  } else {
 def transform(source):
     if source.count(OLD) != 1:
         raise ValueError('Wave Chords crossfade loop changed')
-    return '#include <opxy/kernels/wave_quad.hpp>\n' + source.replace(OLD, NEW)
+    return '#include "native/wave_quad.hpp"\n' + source.replace(OLD, NEW)

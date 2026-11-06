@@ -1,0 +1,6 @@
+{
+  "symbol": "macroosc_native_square_sync",
+  "stackBytes": 168,
+  "range": "1..24 samples, every increment over the call in 2^16..2^31 - 1 (square_sync_in_range checks)",
+  "reference": "macroosc::native::square_sync_reference (native/square_sync.hpp)"
+}

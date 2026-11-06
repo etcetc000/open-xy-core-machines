@@ -1,6 +1,6 @@
-"""Square Sync: both hard-synced squares and the crossfade as the SDK kernel.
+"""Square Sync: both hard-synced squares and the crossfade as the native routine.
 
-opxy::kernels::square_sync runs the master's and the slave's original sample
+macroosc::native::square_sync runs the master's and the slave's original sample
 loops (same increment interpolation, edge times, polynomial steps and sync
 report) and then the Dual Sync crossfade, sample by sample, without the two
 intermediate buffers. Each oscillator's shape-change initialization, pitch
@@ -35,7 +35,7 @@ def transform_analog(source):
     if source.count(INCLUDE) != 1:
         raise ValueError('Analog pair includes changed')
     source = source.replace(INCLUDE, INCLUDE + '#include "optimized/square_sync_pair.hpp"\n')
-    return '#include <opxy/kernels/square_sync.hpp>\n' + source
+    return '#include "native/square_sync.hpp"\n' + source
 
 
 def transform_header(header):
