@@ -28,6 +28,7 @@
 // Oscillator - digital style waveforms.
 
 #pragma once
+#include "native/pluck.hpp"
 #include "optimized/clear_words.hpp"
 
 #include "stmlib/stmlib.h"
@@ -148,14 +149,10 @@ struct AdditiveState {
 };
 
 struct PluckState {
-  size_t size;
-  size_t write_ptr;
-  size_t shift;
-  size_t mask;
+  // OP-XY: size, write position, shift, mask, excitation left, phase and
+  // increment, as the native pluck routine reads them.
+  macroosc::native::PluckString string;
   size_t pluck_position;
-  size_t initialization_ptr;
-  uint32_t phase;
-  uint32_t phase_increment;
   uint32_t max_phase_increment;
   int16_t previous_sample;
   uint8_t polyphony_assigner;
@@ -323,7 +320,7 @@ class DigitalOscillator {
   }
 
   // OP-XY: a struck string writes its first size + 1 samples, no more.
-  inline uint32_t pluck_extent(size_t k) const { return state_.plk[k].size + 1; }
+  inline uint32_t pluck_extent(size_t k) const { return state_.plk[k].string.size + 1; }
 
   void Render(const uint8_t* sync, int16_t* buffer, size_t size);
   

@@ -12,6 +12,7 @@
 #include "optimized/exact_divide.hpp"
 #include "optimized/swarm_pitch.hpp"
 #include "optimized/flute_math.hpp"
+#include "native/pluck.hpp"
 #include "optimized/harmonic_spectrum.hpp"
 #include "optimized/pitch_table.hpp"
 #include "optimized/wave_compact.hpp"
@@ -1234,19 +1235,19 @@ void DigitalOscillator::RenderPlucked(
     // Find the optimal oversampling rate.
     PluckState* p = &state_.plk[active_voice_];
     int32_t increment = phase_increment_;
-    p->shift = 0;
+    p->string.shift = 0;
     while (increment > (2 << 22)) {
       increment >>= 1;
-      ++p->shift;
+      ++p->string.shift;
     }
-    p->size = 1024 >> p->shift;
-    p->mask = p->size - 1;
-    p->write_ptr = 0;
+    p->string.size = 1024 >> p->string.shift;
+    p->string.mask = p->string.size - 1;
+    p->string.write = 0;
     p->max_phase_increment = phase_increment_ << 1;
-    p->phase_increment = phase_increment_;
+    p->string.increment = phase_increment_;
     int32_t width = parameter_[1];
     width = (3 * width) >> 1;
-    p->initialization_ptr = p->size * (8192 + width) >> 16;
+    p->string.excite = p->string.size * (8192 + width) >> 16;
     strike_ = false;
   }
 
@@ -1254,7 +1255,7 @@ void DigitalOscillator::RenderPlucked(
 
   // Update the phase increment of the latest note, but do not transpose too
   // high above the original pitch.
-  current_string->phase_increment = std::min(
+  current_string->string.increment = std::min(
       phase_increment_,
       current_string->max_phase_increment);
 
@@ -1274,6 +1275,20 @@ void DigitalOscillator::RenderPlucked(
 
   int16_t previous_sample = state_.plk[0].previous_sample;
 
+  // The native routine renders all the strings' pairs when the call is in its
+  // range; the loop below covers the rest.
+  for (size_t i = 0; i < kNumPluckVoices; ++i) {
+    state_.plk[i].string.line = delay_lines_->ks + i * 1025;
+  }
+  uint32_t random = Random::state();
+  if (!(size & 1) && macroosc::native::pluck(&state_.plk[0].string, kNumPluckVoices, sizeof(PluckState), buffer,
+                                          static_cast<unsigned>(size >> 1), random, update_probability, loss,
+                                          previous_sample)) {
+    Random::Seed(random);
+    state_.plk[0].previous_sample = previous_sample;
+    return;
+  }
+
   while (size) {
     int32_t sample = 0;
     for (size_t i = 0; i < kNumPluckVoices; ++i) {
@@ -1281,17 +1296,17 @@ void DigitalOscillator::RenderPlucked(
       int16_t* dl = delay_lines_->ks + i * 1025;
       // Initialization: Just use a white noise sample and fill the delay
       // line.
-      if (p->initialization_ptr) {
-        --p->initialization_ptr;
-        int32_t excitation_sample = (dl[p->initialization_ptr] + \
+      if (p->string.excite) {
+        --p->string.excite;
+        int32_t excitation_sample = (dl[p->string.excite] + \
             3 * Random::GetSample()) >> 2;
-        dl[p->initialization_ptr] = excitation_sample;
+        dl[p->string.excite] = excitation_sample;
         sample += excitation_sample;
       } else {
-        p->phase += p->phase_increment;
-        size_t read_ptr = ((p->phase >> (22 + p->shift)) + 2) & p->mask;
-        size_t write_ptr = p->write_ptr;
-        const size_t mask = p->mask, string_size = p->size;
+        p->string.phase += p->string.increment;
+        size_t read_ptr = ((p->string.phase >> (22 + p->string.shift)) + 2) & p->string.mask;
+        size_t write_ptr = p->string.write;
+        const size_t mask = p->string.mask, string_size = p->string.size;
         while (write_ptr != read_ptr) {
           size_t next = (write_ptr + 1) & mask;
           int32_t a = dl[write_ptr];
@@ -1310,8 +1325,8 @@ void DigitalOscillator::RenderPlucked(
           }
           write_ptr = next;
         }
-        p->write_ptr = write_ptr;
-        sample += Interpolate1022(dl, p->phase >> p->shift);
+        p->string.write = write_ptr;
+        sample += Interpolate1022(dl, p->string.phase >> p->string.shift);
       }
     }
     CLIP(sample);
