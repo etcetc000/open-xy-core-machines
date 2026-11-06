@@ -35,8 +35,8 @@
     R7 = R2 >> 31;
     R2 = R2 + R7;
     R2 >>>= 1;                        /* halved toward zero */
-    R7 = R2.L * R4.L (IS);
     R6 = R6 + R3 (NS) || R3 = [P4 + 20] || NOP;   /* the draw */
+    R7 = R2.L * R4.L (IS);
     R2 = R7 + R2;
     R7 = R6.L (Z);
     R2 >>>= 15;
@@ -56,6 +56,7 @@ _macroosc_native_pluck:
     I0 = R2;
     P4 = P1;
     R2 = [P4 + 28];                   /* stride */
+    P1 = [P4];                        /* pairs */
     I2 = R2;
     R1 *= R2;
     R1 = R1 + R0;
@@ -63,7 +64,6 @@ _macroosc_native_pluck:
     R6 = [P4 + 4];                    /* random state */
     R0 = [P4 + 16];
     M1 = R0;                          /* previous sample */
-    P1 = [P4];                        /* pairs */
     LSETUP(.Lpair, .Lpair_end) LC1 = P1;
 .Lpair:
     R7 = 0;
@@ -82,21 +82,22 @@ _macroosc_native_pluck:
     R1 >>= R3;
     R0 >>= R2;                        /* the interpolation position */
     R1 += 2;
+    R2 = R0 >> 22;
     R4 = [P3 + 16];                   /* mask */
+    P1 = R2;
     R3 = [P3 + 8];                    /* write */
     R1 = R1 & R4;                     /* read */
     R5 = R1 - R3;
-    R2 = R0 >> 22;
     R0 >>= 6;
     R0 = R0.L (Z);
     M3 = R0;                          /* its fraction */
-    P1 = R2;
     R5 = R5 & R4;                     /* steps */
     P1 = P0 + (P1 << 1);              /* its word: read after the steps */
     CC = R5 == 0;
     IF CC JUMP .Linterpolate;
     [P3 + 8] = R1;
     I1 = P1;
+    P1 = R3;
     M2 = R7;                          /* the pair's sum, while R7 steps */
     R1 = R3 + R5;
     CC = R4 < R1 (IU);                /* passes the end */
@@ -104,7 +105,6 @@ _macroosc_native_pluck:
     CC = R3 == 0;
     IF CC JUMP .Lwrapping;
     P2 = R5;
-    P1 = R3;
     R4 = [P4 + 12];                   /* keep */
     R5 = [P4 + 8];                    /* update probability */
     P1 = P0 + (P1 << 1);              /* line[write] */
@@ -156,12 +156,12 @@ _macroosc_native_pluck:
 .Lexcite:
     /* line[excite - 1] = (line[excite - 1] + 3 * draw) >> 2, also the sample. */
     R0 += -1;
-    [P3 + 24] = R0;
     P1 = R0;
     R1 = [P4 + 20];
+    [P3 + 24] = R0;
     R6 *= R1;
-    P1 = P0 + (P1 << 1);
     R1 = [P4 + 24];
+    P1 = P0 + (P1 << 1);
     R6 = R6 + R1;
     R1 = R6 >>> 16;
     R2 = R1 << 1;
@@ -178,6 +178,7 @@ _macroosc_native_pluck:
      * the end): one run, then the guard word takes line[0]. */
     R2 = [P3 + 20];                   /* size */
     CC = R3 == 0;
+    P1 = R2;
     IF CC JUMP .Lfrom_zero;
     /* Past the end: a run to the end with the guard word holding line[0]
      * (the last step's right neighbour), then from word 0 when steps remain;
@@ -185,19 +186,18 @@ _macroosc_native_pluck:
     R4 = R2 - R3;                     /* the first run */
     R1 = R1 - R2;                     /* the second */
     B3 = R1;
-    P1 = R2;
     P1 = P0 + (P1 << 1);
     B0 = P1;                          /* the guard word */
     R0 = W[P1] (Z);
     B2 = R0;
+    P2 = R4;
     R0 = W[P0] (Z);
     W[P1] = R0;
-    P2 = R4;
     P1 = R3;
     R4 = [P4 + 12];                   /* keep */
     R5 = [P4 + 8];                    /* update probability */
-    P1 = P0 + (P1 << 1);              /* line[write] */
     R3 = [P4 + 20];                   /* the draw's multiplier */
+    P1 = P0 + (P1 << 1);              /* line[write] */
     R0 = W[P1] (X);                   /* a */
     LSETUP(.Lend_step, .Lend_step_end) LC0 = P2;
 .Lend_step:
@@ -205,10 +205,10 @@ _macroosc_native_pluck:
 .Lend_step_end:
     R0 = R1;
     R0 = B3;
+    P2 = B3;
     P1 = B0;
     CC = R0 == 0;
     IF CC JUMP .Lrestore;
-    P2 = R0;
     P1 = P0;
     R0 = W[P0] (X);                   /* a */
     LSETUP(.Lstart_step, .Lstart_step_end) LC0 = P2;

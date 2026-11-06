@@ -1,6 +1,6 @@
 {
   "symbol": "macroosc_native_additive",
-  "stackBytes": 24,
+  "stackBytes": 28,
   "range": "1 or more output pairs; amplitudes and targets in 0..32767, each set summing to at most 32767 (additive_in_range checks the targets)",
   "reference": "macroosc::native::additive_reference (native/additive.hpp)"
 }

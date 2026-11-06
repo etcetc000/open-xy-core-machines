@@ -37,9 +37,9 @@
 .type _macroosc_native_fold_pair, STT_FUNC
 _macroosc_native_fold_pair:
     [--SP] = (R7:4, P5:3);
-    LINK 416;
     /* P5 = s, keep out and size in B0/B1 (L0/L1 stay zero). */
     P5 = R0;
+    LINK 416;
     B0 = R1;
     B1 = R2;
     P4 = R2;                          /* sample count */
@@ -80,21 +80,24 @@ _macroosc_native_fold_pair:
     P1 = P1 + P0;
     P0 = 200;
     P2 = P2 + P0;
+    R0.L = R0.L + R0.H (NS);
     LSETUP(.Lg_start, .Lg_end) LC0 = P4;
 .Lg_start:
-    R0.L = R0.L + R0.H (NS) || [P2++] = R7 || NOP;
-    R7.H = R2.H * R0.L, R7.L = R2.L * R0.L (T);
+    R7.H = R2.H * R0.L, R7.L = R2.L * R0.L (T) || [P2++] = R1 || NOP;
     R6.L = R5.L * R0.L (T);
+    R0.L = R0.L + R0.H (NS);          /* the next sample's crossfade */
     R1 = R7 +|+ R3;
     R6.L = R6.L + R5.H (NS);
     R1 = R1 >> 4 (V);
     R6.L = R6.L << 1;
     R7 = R7 +|+ R4 || [P1++] = R6 || NOP;
 .Lg_end:
-    R7 = R7 -|- R1;
-    [P2] = R7;
+    R1 = R7 -|- R1;
+    [P2] = R1;
 
     /* ---- sine: XS = [x2 : x1], x = (interpolated sine * gain) >> 15 ---- */
+    R3 = 204;
+    M0 = R3;
     P4 = B1;
     P3 = [P5 + 52];
     R0 = [P5 + 0];
@@ -102,51 +105,48 @@ _macroosc_native_fold_pair:
     R2 = [P5 + 16];
     I1 = SP;
     P1 = SP;
-    R3 = 204;
-    M0 = R3;
+    R1 = R1 + R2 (NS);                /* the loop steps the increment at its end */
     I1 += M0;
-    P0 = 0;
-    P1 = P1 + P0;
     LSETUP(.Ls_start, .Ls_end) LC0 = P4;
 .Ls_start:
-    R1 = R1 + R2 (NS) || [P1++] = R7 || NOP;
-    R3 = R1 >> 1;
+    R3 = R1 >> 1 || [P1++] = R7 || NOP;
     R0 = R0 + R3 (NS);
     R4 = R0 >> 24;
     P0 = R4;
+    R7 = R0 >> 8;
+    R0 = R0 + R3 (NS);
+    R4 = R0 >> 24;
+    P2 = R4;
     P0 = P3 + (P0 << 2);
-    R4 = R0 >> 8 || R6 = [P0] || NOP;
-    R5 = R6.H * R4.L (M, IS);
+    R4 = R0 >> 8 || R6 = [P0] || R3 = [I1 ++ M1];
+    R5 = R6.H * R7.L (M, IS);
     R7.L = R5.H + R6.L (NS);
-    R0 = R0 + R3 (NS);
-    R4 = R0 >> 24;
-    P0 = R4;
-    P0 = P3 + (P0 << 2);
-    R4 = R0 >> 8 || R6 = [P0] || NOP;
+    P2 = P3 + (P2 << 2);
+    R6 = [P2];
     R5 = R6.H * R4.L (M, IS);
-    R7.H = R5.H + R6.L (NS) || R4 = [I1 ++ M1] || NOP;
+    R7.H = R5.H + R6.L (NS);
+    R1 = R1 + R2 (NS);
 .Ls_end:
-    R7.H = R7.H * R4.L, R7.L = R7.L * R4.L (T);
+    R7.H = R7.H * R3.L, R7.L = R7.L * R3.L (T);
     [P1] = R7;
     [P5 + 0] = R0;
+    R1 = R1 - R2 (NS);
     [P5 + 8] = R1;
 
     /* ---- triangle: XT = [x2 : x1], both half steps in 16-bit lanes ---- */
+    I1 = SP;
+    P1 = SP;
+    I1 += M0;                         /* M0 is still 204 */
     R0 = [P5 + 4];
     R1 = [P5 + 12];
     R2 = [P5 + 20];
     R7.L = 0x8000; R7.H = 0x8000;
-    I1 = SP;
-    P1 = SP;
-    R3 = 204;
-    M0 = R3;
-    I1 += M0;
     P0 = 100;
     P1 = P1 + P0;
+    R1 = R1 + R2 (NS);                /* the loop steps the increment at its end */
     LSETUP(.Lt_start, .Lt_end) LC0 = P4;
 .Lt_start:
-    R1 = R1 + R2 (NS) || [P1++] = R5 || NOP;
-    R3 = R1 >> 1;
+    R3 = R1 >> 1 || [P1++] = R5 || NOP;
     R5 = R0 + R3 (NS);
     R0 = R5 + R3 (NS);
     R4 = PACK(R0.H, R5.H) || R3 = [I1 ++ M1] || NOP;
@@ -154,51 +154,51 @@ _macroosc_native_fold_pair:
     R6 = R4 >>> 15 (V);
     R5 = R5 ^ R6;
     R5 = R5 +|+ R7;
+    R1 = R1 + R2 (NS);
 .Lt_end:
     R5.H = R5.H * R3.H, R5.L = R5.L * R3.H (T);
     [P1] = R5;
     [P5 + 4] = R0;
+    R1 = R1 - R2 (NS);
     [P5 + 12] = R1;
 
     /* ---- fold and crossfade ---- */
-    P0 = [P5 + 56];
-    P1 = [P5 + 60];
-    P4 = 512;
-    P5 = P1 + P4;                     /* triangle fold entry 128 */
-    P4 = P0 + P4;                     /* sine fold entry 128 */
+    R3 = 104;
+    M0 = R3;
+    R3 = 304;
+    M1 = R3;
     I0 = SP;
     I1 = SP;
     I2 = SP;
-    R3 = 4;
-    M0 = R3;
-    I0 += M0;
-    R3 = 104;
-    M0 = R3;
+    P0 = [P5 + 56];
+    P1 = [P5 + 60];
+    P4 = 512;
+    I0 += 4;
     I1 += M0;
-    R3 = 304;
-    M0 = R3;
-    I2 += M0;
+    I2 += M1;
+    P5 = P1 + P4;                     /* triangle fold entry 128 */
+    P4 = P0 + P4;                     /* sine fold entry 128 */
     I3 = B0;
     P0 = B1;
     R0 = [I0++];
     R1 = [I1++];
     R2 = R0 >>> 24;
+    R3 = R0 << 16;
     LSETUP(.Lf_start, .Lf_end) LC0 = P0;
 .Lf_start:
-    R3 = R0 << 16;
-    R3 = R3 >>> 24;
     P0 = R2;
-    P0 = P4 + (P0 << 2);
-    P1 = R3;
-    P1 = P4 + (P1 << 2);
-    R2 = R1 >>> 24;
-    R3 = R1 << 16;
     R3 = R3 >>> 24;
+    R2 = R1 >>> 24;
+    P1 = R3;
+    R3 = R1 << 16;
     P2 = R2;
-    P2 = P5 + (P2 << 2);
+    R3 = R3 >>> 24;
     P3 = R3;
-    P3 = P5 + (P3 << 2);
+    P0 = P4 + (P0 << 2);
+    P1 = P4 + (P1 << 2);
+    P2 = P5 + (P2 << 2);
     R0 = R0 << 8 (V) || R2 = [P1] || NOP;
+    P3 = P5 + (P3 << 2);
     R1 = R1 << 8 (V) || R3 = [P3] || NOP;
     R5 = R2.H * R0.L (M, IS) || R4 = [P0] || NOP;
     R6.L = R5.H + R2.L (NS) || R7 = [P2] || NOP;
@@ -208,16 +208,17 @@ _macroosc_native_fold_pair:
     R2.L = R5.H + R4.L (NS);
     R5 = R7.H * R1.H (M, IS);
     R2.H = R5.H + R7.L (NS);
-    R6 = R6 >>> 1 (V);
+    R6 = R6 >>> 1 (V) || R0 = [I0++] || NOP;
     R2 = R2 >>> 1 (V) || R3 = [I2 ++ M2] || NOP;
-    R6 = R6 +|+ R2;
-    R5 = R6.H * R3.L (M, IS) || R0 = [I0++] || NOP;
-    A1 = R6.L * R3.L (M, IS) || R1 = [I1++] || NOP;
+    R6 = R6 +|+ R2 || R1 = [I1++] || NOP;
+    R2 = R0 >>> 24;                   /* the next sample's indices */
+    R5 = R6.H * R3.L (M, IS);
+    A1 = R6.L * R3.L (M, IS);
     R7 = (A1 += R6.L * R3.H) (M, IS);
     R5 = R5 - R7 (NS);
     R6.L = R5.H + R6.L (NS);
 .Lf_end:
-    R2 = R0 >>> 24 || W[I3++] = R6.L || NOP;
+    R3 = R0 << 16 || W[I3++] = R6.L || NOP;
 
     UNLINK;
     (R7:4, P5:3) = [SP++];

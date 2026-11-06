@@ -98,12 +98,11 @@ _macroosc_native_square_sync:
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
-    R5 = R5.L (Z);
 .Ledged2:
-    R6 = R5.L * R5.L (FU);
-    R6 >>= 18;
+    R6 = R5.L * R5.L (FU);           /* t^2: only t's low half counts */
     R5 = ~R5;
     R5 = R5.L (Z);
+    R6 >>= 18;
     R5 = R5.L * R5.L (FU);
     R5 >>= 18;
     R3 = R3 + R6;
@@ -113,6 +112,7 @@ _macroosc_native_square_sync:
     R4 = -1;
     JUMP .Lm_out;
 .Lm_wrap:
+    P1 = LC0;                         /* the report's slot, well ahead of its use */
     /* the report: phase / (increment >> 7) + 1 */
     R5 = R1 >> 7;
     R6 = R0;
@@ -149,8 +149,6 @@ _macroosc_native_square_sync:
     R6 = R6 + R2;
 .Lm_report:
     R6 += 1;
-    R5 = LC0;
-    P1 = R5;
     P0 = P3;
     P0 -= P1;
     B [P0] = R6;
@@ -171,12 +169,11 @@ _macroosc_native_square_sync:
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
-    R5 = R5.L (Z);
 .Ledged4:
-    R6 = R5.L * R5.L (FU);
-    R6 >>= 18;
+    R6 = R5.L * R5.L (FU);           /* t^2: only t's low half counts */
     R5 = ~R5;
     R5 = R5.L (Z);
+    R6 >>= 18;
     R5 = R5.L * R5.L (FU);
     R5 >>= 18;
     R3 = R3 - R6;
@@ -234,12 +231,11 @@ _macroosc_native_square_sync:
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
-    R5 = R5.L (Z);
 .Ledged6:
-    R6 = R5.L * R5.L (FU);
-    R6 >>= 18;
+    R6 = R5.L * R5.L (FU);           /* t^2: only t's low half counts */
     R5 = ~R5;
     R5 = R5.L (Z);
+    R6 >>= 18;
     R5 = R5.L * R5.L (FU);
     R5 >>= 18;
     R3 = R3 + R6;
@@ -265,12 +261,11 @@ _macroosc_native_square_sync:
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
-    R5 = R5.L (Z);
 .Ledged8:
-    R6 = R5.L * R5.L (FU);
-    R6 >>= 18;
+    R6 = R5.L * R5.L (FU);           /* t^2: only t's low half counts */
     R5 = ~R5;
     R5 = R5.L (Z);
+    R6 >>= 18;
     R5 = R5.L * R5.L (FU);
     R5 >>= 18;
     R3 = R3 - R6;
@@ -281,14 +276,14 @@ _macroosc_native_square_sync:
 .Ls_sync:
     W [P5 ++] = R5;
     /* reset time rt = (report - 1) << 9, kept in the spill word */
+    R2 = R1 >> 16;
     R5 = R6;
     R5 += -1;
     R5 <<= 9;
-    [SP] = R5;
     /* at_reset = phase + (65535 - rt) * (increment >> 16) */
-    R2 = R1 >> 16;
     R7 = 65535 (Z);
     R7 = R7 - R5;
+    [SP] = R5;
     R7 *= R2;
     R7 = R7 + R0;
     /* through = at_reset < phase || (!high && at_reset >= 2^31): R6 */
@@ -305,9 +300,9 @@ _macroosc_native_square_sync:
     R7 = 65535 (Z);
     R7 = MIN (R5, R7);
     R2 = R7.L * R7.L (FU);
-    R2 >>= 18;
     R7 = ~R7;
     R7 = R7.L (Z);
+    R2 >>= 18;
     R7 = R7.L * R7.L (FU);
     R7 >>= 18;
     R3 = R3 - R2;
@@ -332,12 +327,11 @@ _macroosc_native_square_sync:
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
-    R5 = R5.L (Z);
 .Ledged10:
-    R6 = R5.L * R5.L (FU);
-    R6 >>= 18;
+    R6 = R5.L * R5.L (FU);           /* t^2: only t's low half counts */
     R5 = ~R5;
     R5 = R5.L (Z);
+    R6 >>= 18;
     R5 = R5.L * R5.L (FU);
     R5 >>= 18;
     R3 = R3 + R6;
@@ -361,12 +355,11 @@ _macroosc_native_square_sync:
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
     DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6); DIVQ (R5, R6);
-    R5 = R5.L (Z);
 .Ledged12:
-    R6 = R5.L * R5.L (FU);
-    R6 >>= 18;
+    R6 = R5.L * R5.L (FU);           /* t^2: only t's low half counts */
     R5 = ~R5;
     R5 = R5.L (Z);
+    R6 >>= 18;
     R5 = R5.L * R5.L (FU);
     R5 >>= 18;
     R3 = R3 - R6;
@@ -374,8 +367,8 @@ _macroosc_native_square_sync:
     R4 = 0;
 .Ls_rephase:
     /* phase = rt * (increment >> 16); next += ((phase >>> 31) ^ -16384) + 16384 */
-    R5 = [SP];
     R2 = R1 >> 16;
+    R5 = [SP];
     R5 *= R2;
     R0 = R5;
     R4 = 0;
@@ -436,8 +429,8 @@ _macroosc_native_square_sync:
     R3 = R7 >>> 15 || R1.L = W [I1 ++];
     R3 = (R3 + R4) << 1;
     R6 = ~R3;
-    A1 = R0.L * R6.L (M);
-    R5.H = (A1 += R1.L * R3.L) (M, T);
+    A1 = R1.L * R3.L (M);
+    R5.H = (A1 += R0.L * R6.L) (M, T);
     R5 = R5 >>> 18;
     R6 = R5 + R5 (NS);
     R5 = R5 + R6 (NS);

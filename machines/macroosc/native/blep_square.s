@@ -39,6 +39,7 @@
 _macroosc_native_blep_square:
     R3 = [SP + 12];                   /* count */
     [--SP] = (R7:4);
+    [--SP] = P3;
     I1 = R0;                          /* this oscillator's call, P1 in the loops */
     B2 = R1;                          /* out */
     B3 = R2;                          /* samples */
@@ -54,17 +55,17 @@ _macroosc_native_blep_square:
     CC = R6 == R7;
     IF !CC JUMP .Lgain;
 .Loscillator:
-    P0 = I1;
+    P1 = I1;                          /* the call, through the loops */
+    P0 = [P1];                        /* state */
     I3 = B2;                          /* out, written */
     I0 = B2;                          /* out, read when mixing */
-    P1 = B3;                          /* samples */
+    P3 = B3;                          /* samples */
     P2.L = _macroosc_native_blep_square_records;
     P2.H = _macroosc_native_blep_square_records;
-    R4 = [P0 + 8];                    /* mix */
-    R2 = [P0 + 20];                   /* increment step */
-    R5 = [P0 + 12];                   /* reciprocal */
-    R7 = [P0 + 4];                    /* K */
-    P0 = [P0];                        /* state */
+    R4 = [P1 + 8];                    /* mix */
+    R2 = [P1 + 20];                   /* increment step */
+    R5 = [P1 + 12];                   /* reciprocal */
+    R7 = [P1 + 4];                    /* K */
     R0 = [P0];
     R1 = [P0 + 4];
     R6 = B[P0 + 16] (Z);
@@ -77,16 +78,15 @@ _macroosc_native_blep_square:
     R6 = 16384 (X);
     R3 = R3 - R6 (NS);                /* N = next - 16384 */
     R6 = R3 << 1;
+    CC = R4 == 0;                     /* first: add to zero */
     R6.L = R6.L * R7.L (T);
     R3 = PACK(R3.L, R6.L);            /* [N : f(N)] */
-    CC = R4 == 0;                     /* first: add to zero */
     IF CC JUMP .Lfirst;
     CC = R5 == 0;
     IF CC JUMP .Lmix_divide;
     P0.L = .Lmr_end;
     P0.H = .Lmr_end;
-    LSETUP(.Lmr_start, .Lmr_end) LC0 = P1;
-    P1 = I1;
+    LSETUP(.Lmr_start, .Lmr_end) LC0 = P3;
 .Lmr_start:
     R1 = R1 + R2 (NS) || R4 = [P2] || R6.L = W[I0++];
     R0 = R0 + R1 (NS) || R7 = [P2 + 36] || NOP;
@@ -99,8 +99,7 @@ _macroosc_native_blep_square:
 .Lmix_divide:
     P0.L = .Lmd_end;
     P0.H = .Lmd_end;
-    LSETUP(.Lmd_start, .Lmd_end) LC0 = P1;
-    P1 = I1;
+    LSETUP(.Lmd_start, .Lmd_end) LC0 = P3;
 .Lmd_start:
     R1 = R1 + R2 (NS) || R4 = [P2] || R6.L = W[I0++];
     R0 = R0 + R1 (NS) || R7 = [P2 + 36] || NOP;
@@ -116,8 +115,7 @@ _macroosc_native_blep_square:
     IF CC JUMP .Lfirst_divide;
     P0.L = .Lfr_end;
     P0.H = .Lfr_end;
-    LSETUP(.Lfr_start, .Lfr_end) LC0 = P1;
-    P1 = I1;
+    LSETUP(.Lfr_start, .Lfr_end) LC0 = P3;
 .Lfr_start:
     R1 = R1 + R2 (NS) || R4 = [P2] || NOP;
     R0 = R0 + R1 (NS) || R7 = [P2 + 36] || NOP;
@@ -129,8 +127,7 @@ _macroosc_native_blep_square:
 .Lfirst_divide:
     P0.L = .Lfd_end;
     P0.H = .Lfd_end;
-    LSETUP(.Lfd_start, .Lfd_end) LC0 = P1;
-    P1 = I1;
+    LSETUP(.Lfd_start, .Lfd_end) LC0 = P3;
 .Lfd_start:
     R1 = R1 + R2 (NS) || R4 = [P2] || NOP;
     R0 = R0 + R1 (NS) || R7 = [P2 + 36] || NOP;
@@ -151,6 +148,7 @@ _macroosc_native_blep_square:
     I1 += M1;                         /* the next call */
 .Losc_end:
     [P0 + 12] = R3;
+    P3 = [SP++];
     (R7:4) = [SP++];
     RTS;
 
@@ -197,18 +195,18 @@ _macroosc_native_blep_square:
 
 .Lblep:
     /* R5.L = t, R7 = 0x0000ffff. */
-    R5 = PACK(R5.L, R5.L);
+    R5 = PACK(R5.L, R5.L) || R2 = [P2 + 4] || NOP;      /* B */
     R5 = R5 ^ R7;                                         /* [t : 65535 - t] */
-    R5.H = R5.H * R5.H, R5.L = R5.L * R5.L (TFU) || R2 = [P2 + 4] || NOP;  /* B */
-    R5 = R5 >> 2 (V) || R7 = [P2 + 8] || NOP;             /* [This : Nx]; [s : -s] */
     R4 = PACK(R3.H, R2.L);                                /* [N : B] */
+    R5.H = R5.H * R5.H, R5.L = R5.L * R5.L (TFU);
+    R5 = R5 >> 2 (V) || R7 = [P2 + 8] || NOP;             /* [This : Nx]; [s : -s] */
     R5.H = R5.H * R7.H, R5.L = R5.L * R7.L (IS) || R2 = [P1 + 4] || NOP;  /* K */
-    R4 = R4 +|+ R5;                                       /* [this : N'] */
+    R4 = R4 +|+ R5 || R7 = [P2 + 36] || NOP;              /* [this : N']; 2^31 */
     R5 = R4 << 1 (V);
-    R5.H = R5.H * R2.L, R5.L = R5.L * R2.L (T) || R7 = [P2 + 36] || NOP;
+    R0 = R0 + R7 (NS) || P2 = [P2 + 12] || NOP;           /* flip the bias and the record */
+    R5.H = R5.H * R2.L, R5.L = R5.L * R2.L (T);
     R4 = PACK(R4.L, R5.L);                                /* pending [N' : f(N')] */
     R3.L = R6.L + R5.H (NS);                              /* this sample, stored by the loop */
-    R0 = R0 + R7 (NS) || P2 = [P2 + 12] || NOP;           /* flip the bias and the record */
     JUMP (P0);                                            /* the loop's last instruction */
 .size _macroosc_native_blep_square, .-_macroosc_native_blep_square
 
