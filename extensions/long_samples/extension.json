@@ -1,0 +1,9 @@
+{
+  "id": "long_samples",
+  "name": "Longer samples",
+  "description": "Loads samples up to 23.7 seconds long instead of 20, on every sampler and drum track.",
+  "note": "Recording still stops at 20 seconds.",
+  "claims": [],
+  "actions": [],
+  "capabilities": ["long_samples"]
+}

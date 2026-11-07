@@ -12,7 +12,9 @@ repository of its own.
   `--extension extensions/<id>`.
 - Change a machine or extension only inside its own folder. Extensions use only
   the SDK's public events and actions (`<opxy/extension.hpp>`) and carry tests;
-  a new event, claim or action is an SDK pull request first. Machine code uses only the public
+  a settings extension (Longer samples, Idle threshold) is only `extension.json`
+  declaring SDK capabilities, with no code or tests. A new event, claim, action
+  or capability is an SDK pull request first. Machine code uses only the public
   `<opxy/...>` headers: no assembly, platform conditionals, OS headers or raw
   addresses, and audio callbacks never allocate, block, log or do I/O. SDK gaps
   are separate pull requests to the SDK's `staging` branch.
