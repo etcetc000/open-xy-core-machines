@@ -14,13 +14,14 @@
  *    where the clamp bites, then >> 17 (arithmetic) and << 15.
  * The sign masks come from saturating 16-bit differences, whose sign is exact.
  *
- * Registers: R0 x (sign-extended), R1 = (input, output), R2 masks and the
- * pickup difference, R3 = (filtered, sample), R4 ringing then the frame,
+ * Registers: R0.L x, R1 = (input, output), R2 masks and the pickup
+ * difference, R3 = (filtered, sample), R4 ringing then the frame,
  * R5 = (-32767, coefficient), R6 = (0xffff, damp), R7 = (32735, level).
- * P0 read, I0 earlier, I1 next, P1 frame out, I2 frame in (adding).
+ * I3 reads, I0 hears, I1 writes, each circular over its line (B/L, cleared
+ * again at the end); P1 frame out, I2 frame in (adding); M3 the Ringing.
  * The loop is rotated: a frame's first instruction runs at the end of the one
  * before, beside that frame's store, so the first runs before the loop and
- * the last frame's store after it. The x after the stretch is read but unused.
+ * the last frame's store after it. The x after the last frame is read but unused.
  */
 .section .text
 .align 4
@@ -29,36 +30,53 @@
 _karplus_native_ring:
     [--SP] = (R7:4);
     P2 = R0;
-    I3 = R0;                          /* the Ringing, for the end */
-    R1 = [P2 + 16];                   /* count */
+    M3 = R0;                          /* the Ringing, for the end */
+    R1 = [P2 + 28];                   /* count */
     CC = R1 == 0;
     IF CC JUMP .Lout;
-    P0 = [P2 + 0];                    /* read */
-    R0 = [P2 + 4];
-    I0 = R0;                          /* earlier */
-    R0 = [P2 + 8];
-    I1 = R0;                          /* next */
-    P1 = [P2 + 12];                   /* frame out */
-    R0 = [P2 + 12];
-    I2 = R0;                          /* frame in */
-    R0 = [P2 + 20];                   /* input */
-    R2 = [P2 + 24];                   /* output (= previous) */
     R7 = R1;
+    R3 = 4096 (Z);                    /* a line, in bytes */
+    R0 = [P2 + 0];                    /* reads */
+    B3 = R0;
+    R2 = [P2 + 12];                   /* from */
+    R2 = R2 << 1;
+    R0 = R0 + R2;
+    I3 = R0;
+    L3 = R3;
+    R0 = [P2 + 4];                    /* hears */
+    B0 = R0;
+    R2 = [P2 + 16];                   /* heard */
+    R2 = R2 << 1;
+    R0 = R0 + R2;
+    I0 = R0;
+    L0 = R3;
+    R0 = [P2 + 8];                    /* writes */
+    B1 = R0;
+    R2 = [P2 + 20];                   /* to */
+    R2 = R2 << 1;
+    R0 = R0 + R2;
+    I1 = R0;
+    L1 = R3;
+    P1 = [P2 + 24];                   /* frame out */
+    R0 = [P2 + 24];
+    I2 = R0;                          /* frame in */
+    R0 = [P2 + 32];                   /* input */
+    R2 = [P2 + 36];                   /* output (= previous) */
     R1 = PACK (R0.L, R2.L);
-    R5 = [P2 + 32];
+    R5 = [P2 + 44];
     R4.L = 0x8001;                    /* -32767 */
     R5 = PACK (R4.L, R5.L);
-    R6 = [P2 + 36];
+    R6 = [P2 + 48];
     R4.L = 0xffff;
     R6 = PACK (R4.L, R6.L);
-    R3 = [P2 + 40];
+    R3 = [P2 + 52];
     R4.L = 0x7fdf;                    /* 32735 */
     R3 = PACK (R4.L, R3.L);
-    R0 = [P2 + 44];
+    R0 = [P2 + 56];
     CC = R0 == 0;
     P2 = R7;                          /* count */
     R7 = R3;                          /* (32735, level) */
-    R0 = W[P0++] (X);                 /* the first x */
+    R0.L = W[I3++];                   /* the first x */
     R2.L = R1.L - R0.L (S);           /* its first instruction */
     IF !CC JUMP .Ladding;
 
@@ -82,7 +100,7 @@ _karplus_native_ring:
     R4 = R4 >>> 1 (V) || R2.L = W[I0++];                /* ringing; a pick's travel back */
     R2.L = R4.L - R2.L (NS) || W[I1++] = R4.L;          /* the string goes on */
     R1 = PACK (R0.L, R3.L);                             /* (input, output) for the next frame */
-    R4 = R2.L * R7.L (IS) || R0 = W[P0++] (X);          /* (ringing - earlier) level; the next x */
+    R4 = R2.L * R7.L (IS) || R0.L = W[I3++];            /* (ringing - earlier) level; the next x */
     R4 = R4 << 5 (S);
     R4 = R4 >>> 17;
     R4 = R4 << 15;
@@ -111,7 +129,7 @@ _karplus_native_ring:
     R4 = R4 >>> 1 (V) || R2.L = W[I0++];
     R2.L = R4.L - R2.L (NS) || W[I1++] = R4.L;
     R1 = PACK (R0.L, R3.L);
-    R4 = R2.L * R7.L (IS) || R0 = W[P0++] (X);
+    R4 = R2.L * R7.L (IS) || R0.L = W[I3++];
     R4 = R4 << 5 (S) || R2 = [I2++];                    /* the frame so far */
     R4 = R4 >>> 17;
     R4 = R4 << 15;
@@ -120,12 +138,15 @@ _karplus_native_ring:
     R2.L = R1.L - R0.L (S) || [P1++] = R4;
 
 .Ldone:
-    P2 = I3;
+    L0 = 0;
+    L1 = 0;
+    L3 = 0;
+    P2 = M3;
     R0 = R1.L (X);
-    [P2 + 24] = R0;                   /* output */
-    [P2 + 28] = R0;                   /* previous */
+    [P2 + 36] = R0;                   /* output */
+    [P2 + 40] = R0;                   /* previous */
     R0 = R1 >>> 16;
-    [P2 + 20] = R0;                   /* input */
+    [P2 + 32] = R0;                   /* input */
 .Lout:
     (R7:4) = [SP++];
     RTS;

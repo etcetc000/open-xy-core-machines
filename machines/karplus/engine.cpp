@@ -14,11 +14,12 @@ using opxy::i32;
 using opxy::u32;
 
 // Pluck samples laid per block. Laying a sample costs about a third of what a
-// sounding frame of both strings does, so a block laying this many costs no
-// more than one sounding. A note sounds from the block after its pluck is
+// sounding frame of both strings does, so a block laying this many costs
+// about what one sounding does. A note sounds from the block after its pluck is
 // whole: 1.5 ms after it starts down to about 172 Hz, at most 12 ms for the
 // lowest notes.
 const u32 kPerBlock = 256;
+static_assert(kLayLength == kLength, "native/lay.hpp wraps round the lines");
 
 // One period, in samples with 8 fractional bits, for a phase increment
 // (2^32 per cycle), within the delay line.
@@ -77,42 +78,30 @@ void begin(Voice& voice, u32 period, i32 bright, u32 position) {
 bool lay(Voice& voice) {
     Pluck& p = voice.pluck;
     opxy::i16* const first = voice.strings[0].line;
-    opxy::i16* const noisy = voice.strings[1].line;
     const u32 base = voice.write - p.length;
     u32 end = p.done + kPerBlock;
     if (end > p.length) end = p.length;
-    const i32 burst = p.burst, smoothing = p.smoothing;
-    Noise ahead = p.ahead;
-    i32 shape = static_cast<i32>(p.shape);
-    for (u32 i = p.done; i < end;) {
-        const u32 at = (base + i) & kMask;
-        const bool combing = i >= p.peak;
-        const u32 back = (at - p.peak) & kMask;
-        u32 count = (combing || end < p.peak ? end : p.peak) - i;
-        if (count > kLength - at) count = kLength - at;
-        if (combing && count > kLength - back) count = kLength - back;
-        Laying stretch;
-        stretch.laid = first + at;
-        stretch.kept = noisy + at;
-        stretch.before = combing ? noisy + back : nullptr;
-        stretch.count = count;
-        stretch.seed = ahead.seed;
-        stretch.smooth = ahead.smooth;
-        stretch.shape = shape;
-        stretch.step = combing ? -static_cast<i32>(p.down) : static_cast<i32>(p.up);
-        stretch.burst = burst;
-        stretch.smoothing = smoothing;
-        lay_stretch(&stretch);
-        ahead.seed = stretch.seed;
-        ahead.smooth = stretch.smooth;
-        shape = stretch.shape;
-        i += count;
-    }
-    p.ahead = ahead;
-    p.shape = static_cast<u32>(shape);
+    Laying block;
+    block.first = first;
+    block.noisy = voice.strings[1].line;
+    block.at = (base + p.done) & kMask;
+    block.pulled = p.done < p.peak ? (end < p.peak ? end : p.peak) - p.done : 0;
+    block.combed = end - p.done - block.pulled;
+    block.peak = p.peak;
+    block.seed = p.ahead.seed;
+    block.smooth = p.ahead.smooth;
+    block.shape = static_cast<i32>(p.shape);
+    block.up = static_cast<i32>(p.up);
+    block.down = static_cast<i32>(p.down);
+    block.burst = p.burst;
+    block.smoothing = p.smoothing;
+    lay_block(&block);
+    p.ahead.seed = block.seed;
+    p.ahead.smooth = block.smooth;
+    p.shape = static_cast<u32>(block.shape);
     p.done = end;
     if (end < p.length) return false;
-    voice.seed = ahead.seed;
+    voice.seed = block.seed;
     // Silence just before the pluck, where the second, lower string first reads.
     const u32 margin = (p.length >> 6) + 4;
     for (u32 i = 1; i <= margin && p.length + i < kLength; ++i) first[(base - i) & kMask] = 0;
@@ -159,54 +148,46 @@ Tap tap(u32 period, u32 position) {
 // One string through a block: each frame reads one period back, filters it,
 // writes the result and hears it at the pickup. damp is the loop filter's
 // weight on the previous sample (Q16, at most half): more weight loses more
-// treble each pass. The block runs in stretches that do not wrap around the
-// line, so the inner loop walks plain pointers. Until a string has passed
+// treble each pass. The frames run round the line. Until a string has passed
 // once round (age, frames since it began to sound), it reads the pluck from
-// `pluck`, the first string's line. The first string sets each output frame
-// and the second adds to it, each at most a quarter scale.
+// `pluck`, the first string's line, so the block splits where that ends. The
+// first string sets each output frame and the second adds to it, each at most
+// a quarter scale.
 template <bool add>
 void run(String& string, const opxy::i16* pluck, u32 age, u32 write, const Tap& tap, i32 damp, i32 level,
          i32* out) {
-    i32 input = string.input, output = string.output, previous = string.previous;
+    Ringing frames;
+    frames.input = string.input;
+    frames.output = string.output;
+    frames.previous = string.previous;
+    frames.writes = string.line;
+    frames.coefficient = tap.coefficient;
+    frames.damp = damp;
+    frames.level = level;
+    frames.add = add;
     for (u32 i = 0; i < opxy::block_frames;) {
-        const u32 from = (write + i - tap.delay) & kMask, heard = (write + i - tap.pickup) & kMask,
-                  to = (write + i) & kMask;
         u32 count = opxy::block_frames - i;
-        if (count > kLength - from) count = kLength - from;
-        if (count > kLength - heard) count = kLength - heard;
-        if (count > kLength - to) count = kLength - to;
-        const opxy::i16* read = string.line + from;
-        const opxy::i16* earlier = string.line + heard;
+        frames.reads = string.line;
+        frames.hears = string.line;
         if (age + i < tap.delay) {
             if (count > tap.delay - (age + i)) count = tap.delay - (age + i);
-            read = pluck + from;
+            frames.reads = pluck;
         }
         if (age + i < tap.pickup) {
             if (count > tap.pickup - (age + i)) count = tap.pickup - (age + i);
-            earlier = pluck + heard;
+            frames.hears = pluck;
         }
-        Ringing stretch;
-        stretch.read = read;
-        stretch.earlier = earlier;
-        stretch.next = string.line + to;
-        stretch.frame = out + i;
-        stretch.count = count;
-        stretch.input = input;
-        stretch.output = output;
-        stretch.previous = previous;
-        stretch.coefficient = tap.coefficient;
-        stretch.damp = damp;
-        stretch.level = level;
-        stretch.add = add;
-        ring(&stretch);
-        input = stretch.input;
-        output = stretch.output;
-        previous = stretch.previous;
+        frames.from = (write + i - tap.delay) & kMask;
+        frames.heard = (write + i - tap.pickup) & kMask;
+        frames.to = (write + i) & kMask;
+        frames.frame = out + i;
+        frames.count = count;
+        ring(&frames);
         i += count;
     }
-    string.input = input;
-    string.output = output;
-    string.previous = previous;
+    string.input = frames.input;
+    string.output = frames.output;
+    string.previous = frames.previous;
 }
 }
 
