@@ -1,0 +1,6 @@
+{
+  "symbol": "karplus_native_lay",
+  "stackBytes": 32,
+  "range": "1..256 samples from a line position (pulled + combed); peak 1..2047; smooth -16384..16383; smoothing 1..32767; burst 0..32767; up and down within +-2^22 and the shape's whole part (shape >> 8) within 16 bits at every sample; the noise peak samples back is noise this pluck kept (lay_in_range checks all but that)",
+  "reference": "karplus::lay_reference (native/lay.hpp)"
+}

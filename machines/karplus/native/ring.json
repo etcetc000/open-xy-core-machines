@@ -1,0 +1,6 @@
+{
+  "symbol": "karplus_native_ring",
+  "stackBytes": 16,
+  "range": "count 1 or more; from, heard and to below 2048; output equal to previous, within +-32704; input -16384..16383; coefficient -10894..0; damp 0..32768; level 0..16384; the lines hold 15-bit samples, as the engine writes them (ring_in_range checks all but the lines)",
+  "reference": "karplus::ring_reference (native/ring.hpp)"
+}
