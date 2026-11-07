@@ -1,0 +1,6 @@
+{
+  "symbol": "karplus_native_lay",
+  "stackBytes": 28,
+  "range": "count 1..2048; smooth -16384..16383; smoothing 1..32767; burst 0..32767; step within +-65536 and the shape's whole part (shape >> 8) within 16 bits at every sample; before, when set, holds 15-bit noise (lay_in_range checks all but before)",
+  "reference": "karplus::lay_reference (native/lay.hpp)"
+}

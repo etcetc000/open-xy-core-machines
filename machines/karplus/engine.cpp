@@ -1,4 +1,5 @@
 #include "core.h"
+#include "native/lay.hpp"
 #include "pick.h"
 #include <opxy/q31.hpp>
 
@@ -33,32 +34,18 @@ u32 period_q8(u32 increment) {
     return (whole << 8) + fraction;
 }
 
-i32 noise(u32& seed) {
-    seed = seed * 1664525u + 1013904223u;
-    return static_cast<i32>(seed >> 17) - 16384;  // Q15, half scale
-}
-
-// The next sample of low-passed noise.
-i32 smoothed(Noise& n, i32 smoothing) {
-    n.smooth += (noise(n.seed) - n.smooth) * smoothing >> 15;
-    return n.smooth;
-}
-
-i32 clamp15(i32 value) {
-    value = value > 16383 ? 16383 : value;
-    return value < -16384 ? -16384 : value;
-}
-
 // value / 2^shift, rounding toward zero (as division does) without dividing,
 // so a quiet string dies away instead of settling at -1.
 template <unsigned shift> i32 toward_zero(i32 value) {
     return (value + ((value >> 31) & ((1 << shift) - 1))) >> shift;
 }
 
-// Q31 control 0..1 to a weight from low to high.
+// Q31 control 0..1 to a weight from low to high: low + (high - low) * c / 32767
+// for c = 0..32767, without dividing (exact while (high - low) * c < 2^30 - 1).
 i32 weight(i32 control, i32 low, i32 high) {
     const i32 c = control < 0 ? 0 : control >> 16;
-    return low + (high - low) * c / 32767;
+    const i32 scaled = (high - low) * c;
+    return low + ((scaled + (scaled >> 15) + 1) >> 15);
 }
 
 // A note's pluck: the string pulled aside at the pick point (a triangle
@@ -111,28 +98,22 @@ bool lay(Voice& voice) {
         u32 count = (combing || end < p.peak ? end : p.peak) - i;
         if (count > kLength - at) count = kLength - at;
         if (combing && count > kLength - back) count = kLength - back;
-        opxy::i16* laid = first + at;
-        opxy::i16* kept = noisy + at;
+        Laying stretch;
+        stretch.laid = first + at;
+        stretch.kept = noisy + at;
+        stretch.before = combing ? noisy + back : nullptr;
+        stretch.count = count;
+        stretch.seed = ahead.seed;
+        stretch.smooth = ahead.smooth;
+        stretch.shape = shape;
+        stretch.step = combing ? -static_cast<i32>(p.down) : static_cast<i32>(p.up);
+        stretch.burst = burst;
+        stretch.smoothing = smoothing;
+        lay_stretch(&stretch);
+        ahead.seed = stretch.seed;
+        ahead.smooth = stretch.smooth;
+        shape = stretch.shape;
         i += count;
-        if (!combing) {
-            const i32 up = static_cast<i32>(p.up);
-            for (; count; --count) {
-                const i32 s = smoothed(ahead, smoothing);
-                *kept++ = static_cast<opxy::i16>(s);
-                *laid++ = static_cast<opxy::i16>(clamp15((shape >> 8) + (s * burst >> 15)));
-                shape += up;
-            }
-        } else {
-            const opxy::i16* before = noisy + back;
-            const i32 down = static_cast<i32>(p.down);
-            for (; count; --count) {
-                const i32 s = smoothed(ahead, smoothing);
-                *kept++ = static_cast<opxy::i16>(s);
-                const i32 combed = clamp15(s - *before++);
-                *laid++ = static_cast<opxy::i16>(clamp15((shape >> 8) + (combed * burst >> 15)));
-                shape -= down;
-            }
-        }
     }
     p.ahead = ahead;
     p.shape = static_cast<u32>(shape);
@@ -146,6 +127,27 @@ bool lay(Voice& voice) {
     return true;
 }
 
+// The allpass coefficient for each rest of 256..511 (Q8, 1 to 2 samples):
+// (256 - rest) * 32768 / (256 + rest), as C divides.
+const opxy::i16 kAllpass[256] = {
+    0, -63, -127, -190, -254, -316, -379, -441, -504, -566, -627, -689, -750, -811, -872, -932,
+    -992, -1053, -1112, -1172, -1231, -1291, -1349, -1408, -1467, -1525, -1583, -1641, -1699, -1756, -1813, -1870,
+    -1927, -1984, -2040, -2096, -2152, -2208, -2263, -2319, -2374, -2429, -2484, -2538, -2593, -2647, -2701, -2755,
+    -2808, -2862, -2915, -2968, -3021, -3073, -3126, -3178, -3230, -3282, -3334, -3385, -3437, -3488, -3539, -3590,
+    -3640, -3691, -3741, -3791, -3841, -3891, -3941, -3990, -4039, -4088, -4137, -4186, -4235, -4283, -4332, -4380,
+    -4428, -4475, -4523, -4570, -4618, -4665, -4712, -4759, -4805, -4852, -4898, -4945, -4991, -5037, -5082, -5128,
+    -5173, -5219, -5264, -5309, -5354, -5398, -5443, -5487, -5532, -5576, -5620, -5664, -5707, -5751, -5794, -5838,
+    -5881, -5924, -5967, -6010, -6052, -6095, -6137, -6179, -6221, -6263, -6305, -6347, -6388, -6430, -6471, -6512,
+    -6553, -6594, -6635, -6675, -6716, -6756, -6797, -6837, -6877, -6917, -6956, -6996, -7036, -7075, -7114, -7153,
+    -7192, -7231, -7270, -7309, -7347, -7386, -7424, -7462, -7501, -7539, -7576, -7614, -7652, -7689, -7727, -7764,
+    -7801, -7839, -7875, -7912, -7949, -7986, -8022, -8059, -8095, -8131, -8167, -8203, -8239, -8275, -8311, -8347,
+    -8382, -8417, -8453, -8488, -8523, -8558, -8593, -8628, -8662, -8697, -8731, -8766, -8800, -8834, -8868, -8902,
+    -8936, -8970, -9004, -9037, -9071, -9104, -9138, -9171, -9204, -9237, -9270, -9303, -9336, -9368, -9401, -9433,
+    -9466, -9498, -9530, -9562, -9595, -9627, -9658, -9690, -9722, -9753, -9785, -9816, -9848, -9879, -9910, -9941,
+    -9972, -10003, -10034, -10065, -10096, -10126, -10157, -10187, -10217, -10248, -10278, -10308, -10338, -10368, -10398, -10428,
+    -10457, -10487, -10517, -10546, -10575, -10605, -10634, -10663, -10692, -10721, -10750, -10779, -10808, -10836, -10865, -10894,
+};
+
 // A first-order allpass supplies a period's last 1..2 samples: it delays
 // without dulling the tone, as linear interpolation would.
 // The pickup sits at the pick point: it hears the string less the wave that
@@ -155,7 +157,7 @@ Tap tap(u32 period, u32 position) {
     Tap result;
     result.delay = (period >> 8) - 1;
     const i32 rest = static_cast<i32>(period - (result.delay << 8));  // Q8, 1 to 2 samples
-    result.coefficient = (256 - rest) * 32768 / (256 + rest);
+    result.coefficient = kAllpass[rest - 256];  // (256 - rest) * 32768 / (256 + rest)
     result.pickup = (period >> 8) * position >> 15;
     if (result.pickup < 1) result.pickup = 1;
     return result;
