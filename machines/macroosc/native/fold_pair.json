@@ -1,0 +1,6 @@
+{
+  "symbol": "macroosc_native_fold_pair",
+  "stackBytes": 452,
+  "range": "1..24 samples, every interpolated control in 0..32767 and a crossfade that never passes 32767 (fold_pair_in_range checks)",
+  "reference": "macroosc::native::fold_pair_reference (native/fold_pair.hpp)"
+}

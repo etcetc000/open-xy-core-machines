@@ -114,6 +114,7 @@ class AnalogOscillator {
   void RenderSyncSlave(const uint8_t*, int16_t*, uint8_t*, size_t);
 
   void RenderFoldPair(AnalogOscillator&, int16_t*, size_t, int32_t, int32_t);
+  void RenderSquareSyncPair(AnalogOscillator&, int16_t*, size_t, int32_t, int32_t, int32_t);
 
   void RenderTripleMix(const uint8_t*, int16_t*, uint8_t*, size_t);
   void RenderTripleFirst(const uint8_t*, int16_t*, uint8_t*, size_t);
@@ -124,6 +125,8 @@ class AnalogOscillator {
   void RenderSquareSyncSlave(const uint8_t*, int16_t*, uint8_t*, size_t);
   void RenderSawSyncSlave(const uint8_t*, int16_t*, uint8_t*, size_t);
   void RenderPairNoSync(AnalogOscillator&, int16_t*, int16_t*, size_t);
+  // Triple Square's three oscillators together: the first written, the others added.
+  static void RenderSquareTriple(AnalogOscillator* oscillators, int16_t* buffer, size_t size);
  private:
   void RenderSquareTripleMix(const uint8_t*, int16_t*, uint8_t*, size_t);
   void RenderSquareTripleFirst(const uint8_t*, int16_t*, uint8_t*, size_t);

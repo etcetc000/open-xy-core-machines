@@ -28,6 +28,8 @@
 // Oscillator - digital style waveforms.
 
 #pragma once
+#include "native/pluck.hpp"
+#include "optimized/clear_words.hpp"
 
 #include "stmlib/stmlib.h"
 
@@ -127,10 +129,13 @@ struct SawSwarmState {
 };
 
 struct HarmonicsState {
-  int32_t amplitude[kNumAdditiveHarmonics];
+  // OP-XY: amplitudes packed two to a word (harmonic 2j + 1 low, 2j + 2
+  // high) for the native additive routine, with the targets packed the same.
+  uint32_t amplitude[kNumAdditiveHarmonics / 2];
   // OP-XY: spectrum cached per parameter pair; Init() clears the key.
   uint32_t key;
   int32_t target[kNumAdditiveHarmonics];
+  uint32_t packed_target[kNumAdditiveHarmonics / 2];
 };
 
 struct AdditiveState {
@@ -144,14 +149,10 @@ struct AdditiveState {
 };
 
 struct PluckState {
-  size_t size;
-  size_t write_ptr;
-  size_t shift;
-  size_t mask;
+  // OP-XY: size, write position, shift, mask, excitation left, phase and
+  // increment, as the native pluck routine reads them.
+  macroosc::native::PluckString string;
   size_t pluck_position;
-  size_t initialization_ptr;
-  uint32_t phase;
-  uint32_t phase_increment;
   uint32_t max_phase_increment;
   int16_t previous_sample;
   uint8_t polyphony_assigner;
@@ -244,6 +245,9 @@ union DigitalOscillatorState {
   uint32_t modulator_phase;
 };
 
+static_assert(sizeof(DigitalOscillatorState) % 4 == 0 && alignof(DigitalOscillatorState) >= 4,
+              "Model state clears by whole aligned words");
+
 class DigitalOscillator {
  public:
   typedef void (DigitalOscillator::*RenderFn)(const uint8_t*, int16_t*, size_t);
@@ -252,7 +256,7 @@ class DigitalOscillator {
   ~DigitalOscillator() { }
   
   inline void Init() {
-    memset(&state_, 0, sizeof(state_));
+    macroosc::clear_words(&state_, sizeof(state_));
     pulse_[0].Init();
     pulse_[1].Init();
     pulse_[2].Init();
@@ -314,6 +318,9 @@ class DigitalOscillator {
   inline void set_delay_lines(void* delay_lines) {
     delay_lines_ = static_cast<DelayLines*>(delay_lines);
   }
+
+  // OP-XY: a struck string writes its first size + 1 samples, no more.
+  inline uint32_t pluck_extent(size_t k) const { return state_.plk[k].string.size + 1; }
 
   void Render(const uint8_t* sync, int16_t* buffer, size_t size);
   

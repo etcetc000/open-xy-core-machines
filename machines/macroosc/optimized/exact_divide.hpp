@@ -1,4 +1,5 @@
 #pragma once
+#include <opxy/divide.hpp>
 #include <opxy/q31.hpp>
 #include <stdint.h>
 #include "division_table.hpp"
@@ -15,6 +16,11 @@ namespace macroosc {
 // its product with d cannot overflow, and residual correction is exact.
 inline uint32_t transition_quotient(uint32_t numerator, uint32_t denominator) {
   if (numerator < denominator) return 0;
+  // A quotient below 65536 by a divisor below 32768, as every transition at an
+  // analog oscillator rate is, takes the device's inline divide steps.
+  if ((numerator >> 16) < denominator && denominator < 0x8000u) {
+    return opxy::divide::quotient16(numerator, denominator);
+  }
   if (denominator <= 1) return denominator ? numerator : 0xffffffffu;
   const unsigned shift = __builtin_clrsb(static_cast<int32_t>(denominator));
   const int32_t normalized = denominator << shift;

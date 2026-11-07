@@ -1,0 +1,6 @@
+{
+  "symbol": "macroosc_native_wave_quad",
+  "stackBytes": 28,
+  "range": "balance 1..65535, any size (wave_quad_in_range checks)",
+  "reference": "macroosc::native::wave_quad_reference (native/wave_quad.hpp)"
+}
