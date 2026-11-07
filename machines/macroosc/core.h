@@ -1,7 +1,7 @@
 #pragma once
 #include <opxy/audio.hpp>
-#include <opxy/lease_pool.hpp>
 #include "braids/macro_oscillator.h"
+#include "optimized/delay_pool.hpp"
 
 namespace macroosc {
 using DelayLines = braids::DigitalOscillator::DelayLines;
@@ -16,7 +16,7 @@ struct Voice {
   braids::MacroOscillator osc;
 };
 struct Shared {
-  opxy::LeasePool<DelayLines, 16> delays;
+  DelayPool<DelayLines, 16> delays;
 };
 // The SDK supplies a stable nonzero owner ID and preallocated instance context.
 void initialize(Voice&, Shared&, opxy::u32 owner);

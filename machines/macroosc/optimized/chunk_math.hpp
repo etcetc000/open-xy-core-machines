@@ -1,7 +1,15 @@
 #pragma once
+#include <opxy/q31.hpp>
 #include <opxy/types.hpp>
 namespace macroosc { namespace chunk_math {
 opxy::u32 phase_delta(opxy::u32 numerator, unsigned size);
+// The same quotient inline, for a loop with registers to spare.
+inline opxy::u32 phase_delta_inline(opxy::u32 numerator, unsigned size) {
+  if (size == 24) return opxy::q31::multiply(static_cast<opxy::i32>(numerator >> 3), 715827883);
+  if (size == 8) return numerator >> 3;
+  if (size == 16) return numerator >> 4;
+  return numerator / size;
+}
 // Parameter interpolation always divides the same numerator. The adapter's
 // three chunk sizes therefore have exact constant quotients.
 inline opxy::u32 interpolation_increment(unsigned size){

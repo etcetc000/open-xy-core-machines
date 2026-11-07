@@ -4,7 +4,7 @@ import re
 def transform(source):
     names=('RenderSquareMaster','RenderSquareSlave','RenderSawMaster',
            'RenderSawSlave','RenderSquareNoSync','RenderSquareTripleMix',
-           'RenderSquareTripleFirst')
+           'RenderSquareTripleFirst','RenderVariableSawNoSync')
     for name in names:
         match=re.search(r'void AnalogOscillator::'+name+r'\([^{}]*\{.*?\n\}',source,re.S)
         if not match:

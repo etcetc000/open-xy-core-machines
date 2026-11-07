@@ -1,0 +1,6 @@
+{
+  "symbol": "macroosc_native_pluck",
+  "stackBytes": 28,
+  "range": "1..4 strings at a stride of 32..1024 bytes (whole words), 1..256 pairs, loss 0..32767, each size a power of two up to 65536 with write below it (or a string never set up), shift at most 9 (pluck_in_range checks)",
+  "reference": "macroosc::native::pluck_reference (native/pluck.hpp)"
+}

@@ -1,0 +1,7 @@
+{
+  "symbol": "macroosc_native_blep_square",
+  "stackBytes": 20,
+  "stateBytes": 100,
+  "range": "1..4 oscillators of 1..256 samples, gain 0..63; each square matches its phase's half and every increment stays below 2^31 (blep_square_last checks)",
+  "reference": "macroosc::native::blep_square_reference (native/blep_square.hpp), per call"
+}

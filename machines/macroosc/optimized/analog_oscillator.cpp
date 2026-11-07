@@ -4,7 +4,10 @@
 #include "optimized/packed_tables.hpp"
 #include "optimized/exact_mix.hpp"
 #include "optimized/pitch_table.hpp"
+#include "native/square_sync.hpp"
 #include "optimized/exact_divide.hpp"
+#include "native/blep_square.hpp"
+#include "native/fold_pair.hpp"
 // Copyright 2012 Emilie Gillet.
 //
 // Author: Emilie Gillet (emilie.o.gillet@gmail.com)
@@ -933,6 +936,8 @@ void AnalogOscillator::RenderVariableSawNoSync(
     int16_t* __restrict__ buffer,
     uint8_t* sync_out,
     size_t size) {
+  uint32_t phase=phase_;
+  bool high=high_;
   BEGIN_INTERPOLATE_PHASE_INCREMENT
   int32_t next_sample = next_sample_;
   if (parameter_ < 1024) {
@@ -953,10 +958,10 @@ void AnalogOscillator::RenderVariableSawNoSync(
     if (0) {
       // sync_in contain the fractional reset time.
       reset_time = static_cast<uint32_t>(0 - 1) << 9;
-      uint32_t phase_at_reset = phase_ + \
+      uint32_t phase_at_reset = phase + \
           (65535 - reset_time) * (phase_increment >> 16);
       sync_reset = true;
-      if (phase_at_reset < phase_ || (!high_ && phase_at_reset >= pw)) {
+      if (phase_at_reset < phase || (!high && phase_at_reset >= pw)) {
         transition_during_reset = true;
       }
       int32_t before = (phase_at_reset >> 18) + ((phase_at_reset - pw) >> 18);
@@ -967,50 +972,51 @@ void AnalogOscillator::RenderVariableSawNoSync(
     }
 
 
-    phase_ += phase_increment;
-    if (phase_ < phase_increment) {
+    phase += phase_increment;
+    if (phase < phase_increment) {
       self_reset = true;
     }
 
     if (false) {
-      if (phase_ < phase_increment) {
-        *sync_out++ = macroosc::transition_quotient(phase_, phase_increment >> 7) + 1;
+      if (phase < phase_increment) {
+        *sync_out++ = macroosc::transition_quotient(phase, phase_increment >> 7) + 1;
       } else {
         *sync_out++ = 0;
       }
     }
 
     while (transition_during_reset || !sync_reset) {
-      if (!high_) {
-        if (phase_ < pw) {
+      if (!high) {
+        if (phase < pw) {
           break;
         }
-        uint32_t t = macroosc::transition_quotient(phase_ - pw, phase_increment >> 16);
+        uint32_t t = macroosc::transition_quotient(phase - pw, phase_increment >> 16);
         this_sample -= ThisBlepSample(t) >> 1;
         next_sample -= NextBlepSample(t) >> 1;
-        high_ = true;
+        high = true;
       }
-      if (high_) {
+      if (high) {
         if (!self_reset) {
           break;
         }
         self_reset = false;
-        uint32_t t = macroosc::transition_quotient(phase_, phase_increment >> 16);
+        uint32_t t = macroosc::transition_quotient(phase, phase_increment >> 16);
         this_sample -= ThisBlepSample(t) >> 1;
         next_sample -= NextBlepSample(t) >> 1;
-        high_ = false;
+        high = false;
       }
     }
 
     if (sync_reset) {
-      phase_ = reset_time * (phase_increment >> 16);
-      high_ = false;
+      phase = reset_time * (phase_increment >> 16);
+      high = false;
     }
 
-    next_sample += phase_ >> 18;
-    next_sample += (phase_ - pw) >> 18;
+    next_sample += phase >> 18;
+    next_sample += (phase - pw) >> 18;
     *buffer++ = (this_sample - 16384) << 1;
   }
+  phase_=phase;high_=high;
   next_sample_ = next_sample;
   END_INTERPOLATE_PHASE_INCREMENT
 }
@@ -1177,6 +1183,7 @@ void AnalogOscillator::RenderBuzzNoSync(
 
 
 #include "optimized/fold_pair.hpp"
+#include "optimized/square_sync_pair.hpp"
 
 void AnalogOscillator::RenderSquareTripleMix(
     const uint8_t* sync_in,
@@ -1213,6 +1220,15 @@ void AnalogOscillator::RenderSquareTripleMix(
   }
 
 
+  // The native routine runs the band-limited square loop (sync is unused here)
+  // whenever the state is in its range; the loop below covers the rest.
+  macroosc::native::BlepSquare square = {phase, phase_increment, phase_increment_increment, next_sample_, high};
+  if (macroosc::native::blep_square(square, buffer, size, 21, true)) {
+    phase_=square.phase;high_=square.high;
+    next_sample_ = square.next_sample;
+    previous_phase_increment_ = square.increment;
+    return;
+  }
   int32_t next_sample = next_sample_;
   while (size--) {
     bool sync_reset = false;
@@ -1324,6 +1340,15 @@ void AnalogOscillator::RenderSquareTripleFirst(
   }
 
 
+  // The native routine runs the band-limited square loop (sync is unused here)
+  // whenever the state is in its range; the loop below covers the rest.
+  macroosc::native::BlepSquare square = {phase, phase_increment, phase_increment_increment, next_sample_, high};
+  if (macroosc::native::blep_square(square, buffer, size, 21, false)) {
+    phase_=square.phase;high_=square.high;
+    next_sample_ = square.next_sample;
+    previous_phase_increment_ = square.increment;
+    return;
+  }
   int32_t next_sample = next_sample_;
   while (size--) {
     bool sync_reset = false;
@@ -1835,6 +1860,89 @@ void AnalogOscillator::RenderTripleMix(
     case OSC_SHAPE_SAW: RenderSawTripleMix(sync_in, buffer, sync_out, size); break;
     default: break;
   }
+}
+namespace {
+inline bool SameSquare(const macroosc::native::BlepSquare& a, const macroosc::native::BlepSquare& b) {
+  return a.phase == b.phase && a.increment == b.increment && a.increment_step == b.increment_step &&
+      a.next_sample == b.next_sample && a.high == b.high;
+}
+}  // namespace
+
+void AnalogOscillator::RenderSquareTriple(AnalogOscillator* osc, int16_t* __restrict__ buffer, size_t size) {
+  // RenderTripleFirst/Mix's preparation and the interpolated increment, for
+  // each oscillator; one native routine call then renders all three when every one
+  // is in its range (the steady shortcut below is an exact special case of the
+  // same loop). Otherwise each renders in turn exactly as before.
+  macroosc::native::BlepSquare square[3];
+  const auto save = [](AnalogOscillator& o, const macroosc::native::BlepSquare& s) {
+    o.phase_ = s.phase;
+    o.high_ = s.high;
+    o.next_sample_ = s.next_sample;
+    o.previous_phase_increment_ = s.increment;
+  };
+  // phase_delta_inline's quotient by the size: a shift for 8 and 16.
+  const unsigned shift = size == 8 ? 3u : size == 16 ? 4u : 0u;
+  for (size_t i = 0; i < 3; ++i) {
+    AnalogOscillator& o = osc[i];
+    if (o.shape_ != o.previous_shape_) {
+      o.Init();
+      o.previous_shape_ = o.shape_;
+    }
+    const uint32_t target = o.ComputePhaseIncrement(o.pitch_);
+    o.phase_increment_ = target;
+    if (o.pitch_ > kHighestNote) {
+      o.pitch_ = kHighestNote;
+    } else if (o.pitch_ < 0) {
+      o.pitch_ = 0;
+    }
+    const uint32_t increment = o.previous_phase_increment_;
+    const bool rising = increment < target;
+    const uint32_t distance = rising ? target - increment : increment - target;
+    const uint32_t delta = shift ? distance >> shift : macroosc::chunk_math::phase_delta_inline(distance, size);
+    square[i].phase = o.phase_;
+    square[i].increment = increment;
+    square[i].increment_step = rising ? delta : ~delta;
+    square[i].next_sample = o.next_sample_;
+    square[i].high = o.high_;
+  }
+  // Oscillators in the same state (unison: Timbre or Color at the middle)
+  // render the same samples, and the buffer's 16-bit sums do not depend on
+  // their order: render one of a matching pair or triple, written, multiply
+  // it by the count, and add the remaining oscillator.
+  int single = -1;
+  int16_t copies = 2;
+  if (SameSquare(square[1], square[2])) {
+    if (SameSquare(square[0], square[1])) copies = 3; else single = 0;
+  } else if (SameSquare(square[0], square[1])) {
+    single = 2;
+  } else if (SameSquare(square[0], square[2])) {
+    single = 1;
+  } else {
+    copies = 0;
+  }
+  if (copies) {
+    const int shared = single == 0 ? 1 : 0;
+    macroosc::native::BlepSquare& s = square[shared];
+    if (macroosc::native::blep_square(s, buffer, size, 21, false)) {
+      for (size_t n = 0; n < size; ++n) buffer[n] = static_cast<int16_t>(buffer[n] * copies);
+      for (int i = 0; i < 3; ++i) if (i != single) save(osc[i], s);
+      if (single < 0) return;
+      if (macroosc::native::blep_square(square[single], buffer, size, 21, true)) {
+        save(osc[single], square[single]);
+      } else {
+        osc[single].RenderSquareTripleMix(nullptr, buffer, nullptr, size);
+      }
+      return;
+    }
+  }
+  macroosc::native::BlepSquare* const squares[3] = {&square[0], &square[1], &square[2]};
+  if (macroosc::native::blep_squares(squares, 3, buffer, size, 21)) {
+    for (size_t i = 0; i < 3; ++i) save(osc[i], square[i]);
+    return;
+  }
+  osc[0].RenderSquareTripleFirst(nullptr, buffer, nullptr, size);
+  osc[1].RenderSquareTripleMix(nullptr, buffer, nullptr, size);
+  osc[2].RenderSquareTripleMix(nullptr, buffer, nullptr, size);
 }
 void AnalogOscillator::RenderTripleFirst(
     const uint8_t* sync_in,

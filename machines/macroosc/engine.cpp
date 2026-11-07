@@ -35,6 +35,7 @@ static_assert(kBlockSize % 4 == 0 && kMaxChunk % 4 == 0 && kFmChunk % 4 == 0,
               "Flute and FOF exact loops require four-sample groups");
 static_assert(kMaxChunk <= 24 && kFmChunk <= 24,
               "Staged oscillator scratch space holds at most 24 samples");
+static_assert(kBlockSize == opxy::block_frames, "One render fills one block");
 // Output level per int16 Braids sample (32768 would be half-scale Q31): -6.8 dB
 // from half scale, so stock volume readouts match stock instruments and 2op FM.
 // The declared output peak in definition.json is 32768 * kOutputLevel.
@@ -42,6 +43,37 @@ const int32_t kOutputLevel = 14910;
 inline bool UsesDelayLines(MacroOscillatorShape shape) {
   return shape == braids::MACRO_OSC_SHAPE_SAW_COMB ||
          (shape >= braids::MACRO_OSC_SHAPE_PLUCKED && shape <= braids::MACRO_OSC_SHAPE_FLUTED);
+}
+// How much of a delay-line slot each such model writes, and how much of that
+// it clears itself on every strike before reading (see DelayPool).
+// The plucked strings start every 1025 samples. Their mark holds, per string,
+// half the samples its strikes may have written, rounded up, in 10 bits.
+const uint32_t kPluckStride = 1025, kPluckWords = (sizeof(int16_t) * kPluckStride * braids::kNumPluckVoices + 3) / 4;
+static_assert(kPluckWords < DelayPool<DelayLines, 16>::kMarkWord && sizeof(DelayLines::comb) / 4 <= DelayPool<DelayLines, 16>::kMarkWord,
+              "No model's lines reach the mark word");
+static_assert(braids::kNumPluckVoices == 3 && (kPluckStride + 1) / 2 < 1024, "Three 10-bit string marks");
+inline uint32_t PluckMark(const MacroOscillator& osc) {
+  uint32_t mark = kMarkValid;
+  for (uint32_t k = 0; k < braids::kNumPluckVoices; ++k) mark |= ((osc.pluck_extent(k) + 1) >> 1) << (10 * k);
+  return mark;
+}
+// Clears only what the slot's last plucked owner marked: the rest is zero.
+inline void ClearPluckMarked(DelayLines* lines, uint32_t mark) {
+  uint32_t* words = reinterpret_cast<uint32_t*>(lines);
+  for (uint32_t k = 0; k < braids::kNumPluckVoices; ++k) {
+    const uint32_t start = k * kPluckStride, extent = 2 * ((mark >> (10 * k)) & 1023);
+    for (uint32_t i = start >> 1, end = (start + extent + 1) >> 1; i < end; ++i) words[i] = 0;
+  }
+}
+
+inline DelayUse DelayUseOf(MacroOscillatorShape shape) {
+  switch (shape) {
+    case braids::MACRO_OSC_SHAPE_SAW_COMB: return {sizeof(DelayLines::comb) / 4, 0};
+    case braids::MACRO_OSC_SHAPE_PLUCKED: return {kPluckWords, 0};
+    case braids::MACRO_OSC_SHAPE_BOWED: return {sizeof(DelayLines::bowed) / 4, sizeof(DelayLines::bowed) / 4};
+    case braids::MACRO_OSC_SHAPE_BLOWN: return {sizeof(DelayLines::bore) / 4, sizeof(DelayLines::bore) / 4};
+    default: return {sizeof(DelayLines::fluted) / 4, sizeof(DelayLines::fluted) / 4};
+  }
 }
 
 // The bowed, blown and fluted models sustain a delay line whose length follows
@@ -75,7 +107,7 @@ inline MacroOscillatorShape ShapeFromParameter(int32_t q31) {
 }
 
 // Inverse of the stock increment: Braids pitch in 1/128 semitone, MIDI 0 = 0.
-static int32_t PitchFromIncrement(uint32_t increment) {
+static inline __attribute__((always_inline)) int32_t PitchFromIncrement(uint32_t increment) {
   if (increment == 0) {
     return 0;
   }
@@ -116,22 +148,42 @@ inline int32_t ClampPitch(int32_t pitch) {
 // `step` (Q16) of a sample, hold the next sample with its low bits cleared.
 // Write reduced samples directly to the scaled output, avoiding an intermediate
 // buffer pass. At 16 bits and every sample, preserve the hold state as before.
+// The hold phase stays below 65536 and the step is at most 65536, so a full
+// step holds every sample and leaves the phase where it was.
 inline void WriteOutput(Voice& voice, const int16_t* block, opxy::Output out,
                         size_t size, int16_t mask, uint32_t step) {
-  if (mask == -1 && step == 65536) {
-    for (size_t i = 0; i < size; ++i) {
-      out[i] = static_cast<int32_t>(block[i]) * kOutputLevel;
+  if (step == 65536) {
+    if (mask == -1) {
+      for (size_t i = 0; i < size; ++i) {
+        out[i] = static_cast<int32_t>(block[i]) * kOutputLevel;
+      }
+      return;
     }
+    int32_t held = voice.held;
+    for (size_t i = 0; i < size; ++i) {
+      held = block[i] & mask;
+      out[i] = static_cast<int32_t>(static_cast<int16_t>(held)) * kOutputLevel;
+    }
+    voice.held = held;
     return;
   }
+  uint32_t phase = voice.hold_phase;
+  int32_t held = voice.held;
+  // Both candidates are computed every sample and selected, which the target
+  // compiler turns into conditional moves: its branch costs more than the work.
+  int32_t scaled = static_cast<int32_t>(static_cast<int16_t>(held)) * kOutputLevel;
   for (size_t i = 0; i < size; ++i) {
-    voice.hold_phase += step;
-    if (voice.hold_phase >= 65536) {
-      voice.hold_phase -= 65536;
-      voice.held = block[i] & mask;
-    }
-    out[i] = static_cast<int32_t>(static_cast<int16_t>(voice.held)) * kOutputLevel;
+    phase += step;
+    const int16_t sample = static_cast<int16_t>(block[i] & mask);
+    const int32_t sample_scaled = static_cast<int32_t>(sample) * kOutputLevel;
+    const bool take = phase >= 65536;
+    held = take ? sample : held;
+    scaled = take ? sample_scaled : scaled;
+    phase &= 65535;  // below 2^17, so this subtracts 65536 exactly when taken
+    out[i] = scaled;
   }
+  voice.hold_phase = phase;
+  voice.held = held;
 }
 
 // Drift: once per block, the walk takes a random step and leaks back toward
@@ -156,10 +208,15 @@ void render(Voice& voice, Shared& state, opxy::u32 owner, opxy::Output out,
   osc->set_parameters(Unipolar15(parameters[1]), Unipolar15(parameters[2]));
 
   bool changed = shape != osc->shape();
+  bool struck_pluck = false;
   osc->set_shape(shape);  // Strikes on change, as on the module.
   if (UsesDelayLines(shape)) {
     if (changed || voice.strike_pending) {
-      voice.delay_slot = state.delays.acquire(owner, voice.delay_slot);
+      uint32_t mark = 0;
+      const bool plucked = shape == braids::MACRO_OSC_SHAPE_PLUCKED;
+      voice.delay_slot = state.delays.acquire(owner, voice.delay_slot, DelayUseOf(shape), plucked ? &mark : nullptr);
+      if (mark) ClearPluckMarked(state.delays.get(owner, voice.delay_slot), mark);
+      struck_pluck = plucked;
     }
   } else if (voice.delay_slot != 0) {
     state.delays.release(owner, voice.delay_slot);
@@ -184,7 +241,9 @@ void render(Voice& voice, Shared& state, opxy::u32 owner, opxy::Output out,
   const int16_t mask = BitMask(BitsFromParameter(parameters[5]));
   const uint32_t step = RateStepQ16(parameters[6]);
   const int32_t drift = Drift(voice, Unipolar15(parameters[7]));
-  int16_t block[kMaxChunk];
+  // The whole block renders before Bits and Rate reduce it in one pass: that
+  // pass is sequential, so its result is the same as reducing each call's part.
+  int16_t block[kBlockSize];
   if (depth == 0) {
     // Preserve the existing update positions and Braids render calls. Most
     // pitch blocks are constant; their log conversion need only run once.
@@ -197,25 +256,35 @@ void render(Voice& voice, Shared& state, opxy::u32 owner, opxy::Output out,
         converted_pitch = PitchFromIncrement(previous_increment);
       }
       osc->set_pitch(ClampPitch(converted_pitch + drift));
-      osc->Render(kNoSync, block, size);
-      WriteOutput(voice, block, out + offset, size, mask, step);
+      osc->Render(kNoSync, block + offset, size);
     }
   } else {
     // Linear FM: at full depth the carrier frequency swings between zero and
     // twice the note. Increments stay below half the sample rate (2^31).
     const uint32_t ratio = RatioQ16FromParameter(parameters[3]);
     const size_t chunk = PerCallState(shape) ? kMaxChunk : kFmChunk;
+    // The modulator's step depends only on the note's increment, which most
+    // blocks hold constant: recompute it only when the increment changes.
+    uint32_t previous_increment = 0, modulator_step = 0;
+    uint32_t fm_phase = voice.fm_phase;
     for (size_t offset = 0; offset < kBlockSize; offset += chunk) {
       const size_t size = kBlockSize - offset < chunk ? kBlockSize - offset : chunk;
       const uint32_t increment = pitch_increments[offset] < 0x80000000u ? pitch_increments[offset] : 0x7fffffffu;
-      const int32_t swing = (static_cast<int32_t>(depth) * ModulatorSine(voice.fm_phase)) >> 15;
+      if (increment != previous_increment || offset == 0) {
+        previous_increment = increment;
+        modulator_step = RatioIncrement(increment, ratio);
+      }
+      const int32_t swing = (static_cast<int32_t>(depth) * ModulatorSine(fm_phase)) >> 15;
       const uint32_t carrier = increment + static_cast<uint32_t>(static_cast<int32_t>(increment >> 15) * swing);
-      voice.fm_phase += RatioIncrement(increment, ratio) * static_cast<uint32_t>(size);
+      fm_phase += modulator_step * static_cast<uint32_t>(size);
       osc->set_pitch(ClampPitch(PitchFromIncrement(carrier) + drift));
-      osc->Render(kNoSync, block, size);
-      WriteOutput(voice, block, out + offset, size, mask, step);
+      osc->Render(kNoSync, block + offset, size);
     }
+    voice.fm_phase = fm_phase;
   }
+  // A strike sets its string's length during this block's first render call.
+  if (struck_pluck) state.delays.raise_mark(owner, voice.delay_slot, PluckMark(*osc));
+  WriteOutput(voice, block, out, kBlockSize, mask, step);
   voice.rng_state = stmlib::Random::state();
 }
 }  // namespace macroosc
