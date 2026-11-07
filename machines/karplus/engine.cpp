@@ -1,5 +1,6 @@
 #include "core.h"
 #include "native/lay.hpp"
+#include "native/ring.hpp"
 #include "pick.h"
 #include <opxy/q31.hpp>
 
@@ -12,8 +13,6 @@ namespace {
 using opxy::i32;
 using opxy::u32;
 
-// Loop gain per pass: a long natural ring, which the amp envelope cuts short.
-const i32 kGain = 32735;  // Q15, 0.999
 // Pluck samples laid per block. Laying a sample costs about a third of what a
 // sounding frame of both strings does, so a block laying this many costs no
 // more than one sounding. A note sounds from the block after its pluck is
@@ -32,12 +31,6 @@ u32 period_q8(u32 increment) {
     u32 fraction = rest / ((increment >> 8) + 1);
     if (fraction > 255) fraction = 255;
     return (whole << 8) + fraction;
-}
-
-// value / 2^shift, rounding toward zero (as division does) without dividing,
-// so a quiet string dies away instead of settling at -1.
-template <unsigned shift> i32 toward_zero(i32 value) {
-    return (value + ((value >> 31) & ((1 << shift) - 1))) >> shift;
 }
 
 // Q31 control 0..1 to a weight from low to high: low + (high - low) * c / 32767
@@ -175,7 +168,6 @@ template <bool add>
 void run(String& string, const opxy::i16* pluck, u32 age, u32 write, const Tap& tap, i32 damp, i32 level,
          i32* out) {
     i32 input = string.input, output = string.output, previous = string.previous;
-    const i32 coefficient = tap.coefficient;
     for (u32 i = 0; i < opxy::block_frames;) {
         const u32 from = (write + i - tap.delay) & kMask, heard = (write + i - tap.pickup) & kMask,
                   to = (write + i) & kMask;
@@ -193,22 +185,24 @@ void run(String& string, const opxy::i16* pluck, u32 age, u32 write, const Tap& 
             if (count > tap.pickup - (age + i)) count = tap.pickup - (age + i);
             earlier = pluck + heard;
         }
-        opxy::i16* next = string.line + to;
-        i32* frame = out + i;
+        Ringing stretch;
+        stretch.read = read;
+        stretch.earlier = earlier;
+        stretch.next = string.line + to;
+        stretch.frame = out + i;
+        stretch.count = count;
+        stretch.input = input;
+        stretch.output = output;
+        stretch.previous = previous;
+        stretch.coefficient = tap.coefficient;
+        stretch.damp = damp;
+        stretch.level = level;
+        stretch.add = add;
+        ring(&stretch);
+        input = stretch.input;
+        output = stretch.output;
+        previous = stretch.previous;
         i += count;
-        for (; count; --count) {
-            const i32 x = *read++;
-            const i32 sample = input + toward_zero<15>(coefficient * (x - output));
-            input = x;
-            output = sample;
-            const i32 filtered = sample + toward_zero<16>((previous - sample) * damp);
-            previous = sample;
-            const i32 ringing = clamp15(toward_zero<15>(filtered * kGain));
-            *next++ = static_cast<opxy::i16>(ringing);
-            const i32 heard_now = clamp15((ringing - *earlier++) * level >> 12) << 15;
-            *frame = add ? *frame + heard_now : heard_now;
-            ++frame;
-        }
     }
     string.input = input;
     string.output = output;

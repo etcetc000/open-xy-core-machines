@@ -32,39 +32,48 @@ inline opxy::i32 clamp15(opxy::i32 value) {
 // (burst, Q15) of it, or past the pick point of it less the noise a pick's
 // travel back (clamped to 15 bits), clamped to 15 bits; then the shape moves
 // by step.
-inline void lay_reference(Laying* l) {
+template <bool combing> inline void lay_samples(Laying* l) {
     opxy::i16* laid = l->laid;
     opxy::i16* kept = l->kept;
     const opxy::i16* before = l->before;
     opxy::u32 seed = l->seed;
     opxy::i32 smooth = l->smooth, shape = l->shape;
+    const opxy::i32 step = l->step, burst = l->burst, smoothing = l->smoothing;
     for (opxy::u32 k = l->count; k; --k) {
         seed = seed * 1664525u + 1013904223u;
         const opxy::i32 noise = static_cast<opxy::i32>(seed >> 17) - 16384;
-        smooth += (noise - smooth) * l->smoothing >> 15;
+        smooth += (noise - smooth) * smoothing >> 15;
         *kept++ = static_cast<opxy::i16>(smooth);
-        const opxy::i32 share = before ? clamp15(smooth - *before++) : smooth;
-        *laid++ = static_cast<opxy::i16>(clamp15((shape >> 8) + (share * l->burst >> 15)));
-        shape += l->step;
+        const opxy::i32 share = combing ? clamp15(smooth - *before++) : smooth;
+        *laid++ = static_cast<opxy::i16>(clamp15((shape >> 8) + (share * burst >> 15)));
+        shape += step;
     }
     l->seed = seed;
     l->smooth = smooth;
     l->shape = shape;
+}
+inline void lay_reference(Laying* l) {
+    if (l->before) lay_samples<true>(l);
+    else lay_samples<false>(l);
 }
 }
 
 extern "C" void karplus_native_lay(karplus::Laying* l);
 
 namespace karplus {
-// The routine's range: a low-pass state and weight that keep the noise within
-// 15 bits, a share that fits 16, and a shape whose whole samples fit 16 bits
-// throughout. Past the pick point `before` must hold noise this stretch or an
-// earlier one kept (15 bits), as the engine's own lines do.
+// The routine's range: at most a block's samples; a low-pass state and weight
+// that keep the noise within 15 bits, and a share that fits 16; a step within
+// 2^22 and a shape whose whole samples (shape >> 8) fit 16 bits throughout (the
+// shape moves monotonically, so its ends tell). Past the pick point `before`
+// must hold noise this stretch or an earlier one kept (15 bits), as the
+// engine's own lines do.
 inline bool lay_in_range(const Laying* l) {
-    const opxy::i32 last = l->shape + static_cast<opxy::i32>(l->count - 1) * l->step;
-    return l->count >= 1 && l->count <= 2048 && l->smooth >= -16384 && l->smooth <= 16383 && l->smoothing >= 1 &&
-           l->smoothing <= 32767 && l->burst >= 0 && l->burst <= 32767 && l->step >= -65536 && l->step <= 65536 &&
-           (l->shape >> 8) >= -32768 && (l->shape >> 8) <= 32767 && (last >> 8) >= -32768 && (last >> 8) <= 32767;
+    if (l->count < 1 || l->count > 256 || l->step < -(1 << 22) || l->step > (1 << 22) || l->shape < -(1 << 23) ||
+        l->shape >= (1 << 23))
+        return false;
+    const opxy::i32 last = l->shape + static_cast<opxy::i32>(l->count - 1) * l->step;  // within 2^31: no overflow
+    return l->smooth >= -16384 && l->smooth <= 16383 && l->smoothing >= 1 && l->smoothing <= 32767 &&
+           l->burst >= 0 && l->burst <= 32767 && (last >> 8) >= -32768 && (last >> 8) <= 32767;
 }
 inline void lay_stretch(Laying* l) {
     if (lay_in_range(l)) OPXY_NATIVE(karplus_native_lay, lay_reference)(l);
