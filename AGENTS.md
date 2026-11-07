@@ -13,8 +13,9 @@ repository of its own.
 - Change a machine or extension only inside its own folder. Extensions use only
   the SDK's public events and actions (`<opxy/extension.hpp>`) and carry tests;
   a new event, claim or action is an SDK pull request first. Machine code uses only the public
-  `<opxy/...>` headers: no assembly, platform conditionals, OS headers or raw
-  addresses, and audio callbacks never allocate, block, log or do I/O. SDK gaps
+  `<opxy/...>` headers: no platform conditionals, OS headers or raw addresses,
+  and assembly only as routines in the machine's `native/` folder behind
+  `<opxy/native.hpp>`, each with a C reference that it matches exactly; and audio callbacks never allocate, block, log or do I/O. SDK gaps
   are separate pull requests to the SDK's `staging` branch.
 - Keep vendored code under `vendor/` byte-for-byte, with its licence.
 - A release is a tag here, then a pull request against the SDK's `staging` that
