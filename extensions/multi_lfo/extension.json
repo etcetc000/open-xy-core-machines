@@ -1,9 +1,8 @@
 {
   "id": "multi_lfo",
   "name": "Four LFOs",
-  "description": "Four of stock's LFOs per instrument track. On the LFO page, Shift + turn encoder 1 picks LFO 1-4; LFO 1 is stock's own.",
-  "note": "LFOs 2-4 are kept with the project, not in presets.",
+  "description": "Four of stock's LFOs per instrument track, all running. On the LFO page, Shift + turn encoder 1 shows LFO 1-4 on stock's own page.",
+  "note": "Presets, pattern copy and step locks reach only the LFO the page shows.",
   "claims": ["lfo_page"],
-  "actions": ["lfo_copies", "notify"],
-  "layer": {"nodes": ["panel", "title", "kind", "state", "value0", "value1", "value2", "value3", "hint"]}
+  "actions": ["lfo_copies", "notify"]
 }
