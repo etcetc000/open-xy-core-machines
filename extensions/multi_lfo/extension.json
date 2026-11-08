@@ -1,0 +1,8 @@
+{
+  "id": "multi_lfo",
+  "name": "Four LFOs",
+  "description": "Four of stock's LFOs per instrument track, all running. On the LFO page, Shift + turn encoder 1 shows LFO 1-4 on stock's own page.",
+  "note": "Presets, pattern copy and step locks reach only the LFO the page shows.",
+  "claims": ["lfo_page"],
+  "actions": ["lfo_copies", "notify"]
+}
