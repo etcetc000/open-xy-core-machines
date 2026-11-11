@@ -13,7 +13,7 @@ of this repository. They also serve as worked examples for writing your own.
 | [Timestretch](machines/timestretch) | Sample engine | Tempo-locked, pitch-preserving loops on the stock drum page |
 | [Ring Mod](machines/ringmod) | Send effect | Ring modulation with the stock mixer handling Dry |
 | [Ping Pong](machines/pingpong) | Send effect | A ping-pong delay with stock delay's tempo-synced controls, in the send slot's scratch memory (SDK 1.2) |
-| [Ensemble](machines/ensemble) | Send effect | A stereo chorus on eight controls, drawn on the SDK's effect page as stock's FX page (SDK 1.8) |
+| [Ensemble](machines/ensemble) | Send effect | A stereo chorus on eight controls, drawn as stock's FX page with the send's meters (SDK 1.14) |
 
 Each folder is one machine: `machine.json` (kind, SDK version and the numbers it
 prefers), `definition.json` (controls), its C++ and, for a synth, its artwork.
