@@ -2,9 +2,8 @@
 
 A stereo chorus for the OP-XY, built with the
 [Open-XY SDK](https://github.com/etcetc000/open-xy): the example of a send
-effect with eight controls, drawn on the SDK's
-[effect page](https://github.com/etcetc000/open-xy/blob/staging/docs/display.md#effect-page)
-(SDK 1.8).
+effect with eight controls on a page of its own, drawn as stock's FX page
+(SDK 1.14, for the send's meters).
 
 One LFO sweeps a short delay on each side; Stereo offsets the right side's
 phase, up to half a cycle. The page reads as stock's FX page does: the send's
@@ -32,8 +31,9 @@ declared as `bufferBytes`.
 | --- | --- |
 | [machine.json](machine.json), [definition.json](definition.json) | Kind, SDK version, controls, the buffer size and the display's budget |
 | [core.h](core.h), [fx.cpp](fx.cpp) | The delay lines, the LFO and the feedback |
+| [effect_page.h](effect_page.h) | The page: stock's FX page for eight controls, which an effect copies with the machine |
 | [display.h](display.h), [display.cpp](display.cpp) | The effect page, its titles and captions |
-| [panel.svg.fragment](panel.svg.fragment) | The page's artwork, the block `effect_page.hpp` draws over |
+| [panel.svg.fragment](panel.svg.fragment) | The page's artwork, the block `effect_page.h` draws over |
 | [tests/sound.cpp](tests/sound.cpp) | Sound checks: a stale buffer never heard, the repeat arriving after its delay, silence without a buffer |
 
 The buffer is never cleared, so the effect reads only what it has written

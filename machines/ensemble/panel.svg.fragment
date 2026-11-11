@@ -1,5 +1,5 @@
 <g id="ensemble_panel">
-<!-- SDK effect page (opxy/effect_page.hpp), after stock's FX page: keep this block first.
+<!-- The effect page (effect_page.h), after stock's FX page: keep this block first.
      As in stock's artwork, every shape is a plain fill on whole pixels, with no stroke.
      The badge, "FX" and the name are stock's size and place; the badge's corners are
      notched a pixel rather than curved. Bright and dim boxes and bars trade rows; the

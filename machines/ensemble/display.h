@@ -1,5 +1,5 @@
 #pragma once
-#include <opxy/effect_page.hpp>
+#include "effect_page.h"
 
 namespace ensemble {
 // Matches resources.display in definition.json: paths, points, nodes, texts, palette.
