@@ -49,7 +49,9 @@ struct Source {
 // from PCM, so the cursor carries neither amplitudes nor interpolation state.
 struct Cursor { u32 left, width, lap, next_anchor; };
 struct Reference { u32 position; Cursor window; u32 lap; };
-static inline Cursor cursor(const Source& s, u32 position, u32 lap) {
+// Out of line: it runs only at wraps, splice starts and rebuilds past more
+// than one keyframe, and a copy at each call costs kilobytes of code.
+__attribute__((noinline)) static Cursor cursor(const Source& s, u32 position, u32 lap) {
     const u32 frame = position >> s.shift;
     u32 left = 0, right = s.loop, next_anchor = 0;
     if (s.reverse) {

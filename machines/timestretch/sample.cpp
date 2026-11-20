@@ -524,6 +524,139 @@ inline opxy::i32 step_crossed(stretch::Reference& h, const stretch::Source& s) {
     step_window(h, s);
     return window_room(h);
 }
+// A playhead's motion over skipped frames, to retrace them: each frame adds
+// advance (plus extra when the remainder carries, as the tempo clock does)
+// and wraps at the loop.
+struct Motion {
+    opxy::u32 advance, extra, remainder, divisor, loop;
+};
+struct Place {
+    opxy::u32 position, lap, remainder;
+};
+inline Place forward(const Place& p, const Motion& m) {
+    const opxy::u32 sum = p.remainder + m.remainder;
+    const bool carry = sum >= m.divisor;
+    const opxy::u32 moved = p.position + m.advance + (carry ? m.extra : 0u);
+    const bool wrapped = moved >= m.loop;
+    return Place{wrapped ? moved - m.loop : moved, wrapped ? p.lap + 1u : p.lap, carry ? sum - m.divisor : sum};
+}
+// Whether cursor() would start a window at this position: the region's start,
+// or exactly on a keyframe of the region (one bitmap bit and no fraction).
+inline bool starts_window(const stretch::Source& s, opxy::u32 position) {
+    if (!position) return true;
+    if (position & ((1u << s.shift) - 1u)) return false;
+    const opxy::u32 frame = position >> s.shift;
+    const opxy::u32 physical = s.reverse ? s.begin + s.frames - 1u - frame : s.begin + frame;
+    return physical > s.begin && ((sample_analysis::mask_word(*s.analysis, physical >> 5) >> (physical & 31u)) & 1u);
+}
+// From one keyframe position to a later one on the same lap, how far the
+// window starting at the first must move to hold the second: 0 when it
+// already does (no keyframe between them), 1 when the window one key on does
+// (one between), 2 when only cursor() does. Positions up to 64 frames apart
+// are settled by counting bitmap bits; beyond that by building the windows.
+opxy::u32 keys_crossed(const stretch::Source& s, opxy::u32 from, opxy::u32 to, opxy::u32 lap) {
+    const opxy::u32 a = from >> s.shift, b = to >> s.shift;
+    if (b - a <= 64u) {
+        const opxy::u32 last = s.begin + s.frames - 1u;
+        const opxy::u32 low = s.reverse ? last - b : s.begin + a, high = low + (b - a);
+        opxy::u32 count = 0;
+        for (opxy::u32 frame = low + 1u; frame < high && count < 2u;) {
+            const opxy::u32 bit = frame & 31u, span = 32u - bit;
+            opxy::u32 bits = sample_analysis::mask_word(*s.analysis, frame >> 5) >> bit;
+            if (high - frame < span) bits &= (1u << (high - frame)) - 1u;
+            if (bits) count += (bits & (bits - 1u)) ? 2u : 1u;
+            frame += span;
+        }
+        return count < 2u ? count : 2u;
+    }
+    stretch::Reference r{to, stretch::cursor(s, from, lap), lap};
+    if (window_room(r) >= 0) return 0;
+    step_window(r, s);
+    return r.window.left + r.window.width == to ? 1u : 2u;
+}
+// The window a playhead holds after skipped frames (first..now), doing what
+// the one stepping at every frame would have left does (same right edge, lap
+// and next keyframe). Stepping keeps a window that holds the position, so
+// where the position lies strictly inside one it is the only candidate, and
+// step_window() (one key on, or cursor()) builds it. On a keyframe there are
+// two: the window ending there, if the frame before held a window reaching
+// it, or the one cursor() starts there, if that frame passed it by two or
+// more keys. Which one follows from the frame before:
+// - it wrapped into this frame, or lay two or more keyframes back: cursor();
+// - it was off a keyframe (one window only), or the skip's first frame (its
+//   window is the granule's): that window, stepped to this frame;
+// - it was on the keyframe just before this one: the window between the two,
+//   whichever it held;
+// - it was on a keyframe with exactly one more between: the window ending
+//   here if it held the one starting there, cursor() if the one ending there.
+// Only the last case looks further back, and each such frame flips the
+// answer, so the walk back reads key bits and the windows are built once it
+// stops. Returns the room.
+__attribute__((noinline)) opxy::i32 resume_window(stretch::Reference& h, const stretch::Source& s,
+                                                   const Motion& m, opxy::u32 remainder, int skipped) {
+    const stretch::Cursor start = h.window;
+    step_window(h, s);
+    if (h.window.left != h.position || h.window.lap != h.lap) return window_room(h);
+    const stretch::Cursor here = h.window;  // cursor() at the playhead
+    // Back from now while each frame was on a keyframe with one more between
+    // it and the next. Undo a frame: it carried exactly when the remainder it
+    // left is below the clock's remainder step, and it wrapped exactly when
+    // the position it left is below its advance.
+    Place p{h.position, h.lap, remainder};
+    opxy::u32 before_now = 0;  // the position one frame back from now
+    stretch::Cursor window = here;  // the window at p once the walk stops
+    int back = 0;
+    while (back < skipped) {  // always left by a break
+        const bool carry = p.remainder < m.remainder;
+        const opxy::u32 advance = m.advance + (carry ? m.extra : 0u);
+        if (p.position < advance) {  // it wrapped into this frame: cursor() there
+            if (back) window = stretch::cursor(s, p.position, p.lap);
+            break;
+        }
+        const Place q{p.position - advance, p.lap, carry ? p.remainder + m.divisor - m.remainder : p.remainder - m.remainder};
+        if (!back) before_now = q.position;
+        if (!starts_window(s, q.position)) {  // off a keyframe: the only window, stepped on
+            stretch::Reference r{p.position, stretch::cursor(s, q.position, q.lap), p.lap};
+            if (window_room(r) < 0) step_window(r, s);
+            window = r.window;
+            break;
+        }
+        if (back + 1 == skipped) {  // the skip's first frame: its window, stepped there and on
+            stretch::Reference r{q.position, start, q.lap};
+            if (window_room(r) < 0) step_window(r, s);
+            r.position = p.position;
+            if (window_room(r) < 0) step_window(r, s);
+            window = r.window;
+            break;
+        }
+        const opxy::u32 crossed = keys_crossed(s, q.position, p.position, p.lap);
+        if (crossed == 0u) {  // the window between the two keyframes
+            window = stretch::cursor(s, q.position, q.lap);
+            break;
+        }
+        if (crossed == 2u) {  // passed by two or more: cursor() here
+            if (back) window = stretch::cursor(s, p.position, p.lap);
+            break;
+        }
+        p = q;
+        ++back;
+    }
+    // Forward again: over each of the frames walked, a window ending at its
+    // frame gives way to cursor() at the next, and one starting there to the
+    // window one key on, which ends at the next.
+    if (back) {
+        const bool ends = window.left + window.width == p.position;
+        if (ends == ((back & 1) != 0)) {
+            window = here;
+        } else {
+            stretch::Reference r{h.position, stretch::cursor(s, before_now, h.lap), h.lap};
+            step_window(r, s);
+            window = r.window;
+        }
+    }
+    h.window = window;
+    return window_room(h);
+}
 // A run of timestretch frames with no splice due or under way, the voice
 // playing, and the ideal playhead at the voice's position. Each frame steps a
 // playhead's keyframe window only when its countdown has run out (a crossing
@@ -537,6 +670,45 @@ struct RunState {
     opxy::u32 time_remainder;
     bool finished;
 };
+// Frames, from a run's first, whose window steps can be skipped without
+// changing any splice decision. A check (stretch::splice_due) compares the
+// granule's two positions, and each is a playhead's position at its last
+// window step or at the block's start, whichever is later; so the distance it
+// sees can exceed the playheads' true distance by what either travelled since
+// the block's start. Skipped steps leave those positions and the windows
+// older, and after the skip both are right again once each playhead has
+// stepped once more (one keyframe gap, at most 257 frames of the sample). So
+// the skip may last n frames when, through n + that catch-up time, the true
+// distance plus the travel since the block's start stays within the budget:
+// then every check the steps would have made, and every one made instead,
+// answers "no splice". Counted in sixteenths of a frame, rounded the safe way.
+// 0 when either playhead moves less than a sixteenth of a frame a frame.
+inline int quiet_frames(const RunState& run, const StretchBlock& b, const stretch::Source& s, int first) {
+    const opxy::u32 advance0 = b.advances[0], advance1 = b.advances[1], step = b.pitch_step;
+    const opxy::u32 unit = s.shift - 4u;  // shift >= 11
+    // The tempo clock's two advances are taken in either order, so the bound
+    // does not rest on the carried one being the larger.
+    const opxy::u32 low = advance0 < advance1 ? advance0 : advance1, high = advance0 < advance1 ? advance1 : advance0;
+    const opxy::u32 slowest = (step < low ? step : low) >> unit;
+    if (!slowest) return 0;
+    const long long laps = static_cast<long long>(static_cast<opxy::i32>(run.actual.lap - run.ideal.lap));
+    const long long delta = laps * b.loop + static_cast<long long>(run.actual.position) -
+                            static_cast<long long>(run.ideal.position);
+    const unsigned long long apart = (static_cast<unsigned long long>(delta < 0 ? -delta : delta) >> unit) + 1u;
+    const opxy::u32 budget = stretch::kLeashFrames * 16u;  // a check splices from 1765 frames
+    const opxy::u32 gap0 = step > advance0 ? step - advance0 : advance0 - step;
+    const opxy::u32 gap1 = step > advance1 ? step - advance1 : advance1 - step;
+    const opxy::u32 drift = ((gap0 > gap1 ? gap0 : gap1) >> unit) + 1u;
+    const opxy::u32 fastest = ((step > high ? step : high) >> unit) + 1u;
+    if (apart >= budget || drift > 65536u || fastest > 65536u) return 0;
+    const opxy::u32 catch_up = (257u * 16u + slowest - 1u) / slowest + 2u;
+    const opxy::u32 fixed = static_cast<opxy::u32>(apart) + static_cast<opxy::u32>(first) * fastest;
+    if (fixed >= budget) return 0;
+    const opxy::u32 frames = (budget - fixed) / (drift + fastest);
+    if (frames <= catch_up + 1u) return 0;
+    const opxy::u32 n = frames - catch_up - 1u;
+    return n > static_cast<opxy::u32>(kBlock) ? kBlock : static_cast<int>(n);
+}
 template <bool Once>
 __attribute__((noinline)) int stretch_run(opxy::i32* output, int i, RunState& run, const StretchBlock& b,
                                            const opxy::SampleTaps& taps, stretch::Granule& g, const stretch::Source& s) {
@@ -553,20 +725,9 @@ __attribute__((noinline)) int stretch_run(opxy::i32* output, int i, RunState& ru
     // registers.
     opxy::u32 positions[kBlock];
     const int first = i;
-    while (i < kBlock) {
-        if ((ideal_room | actual_room) < 0) {
-            if (ideal_room < 0) {
-                g.ideal.position = ideal;
-                g.ideal.lap = ideal_lap;
-                ideal_room = step_crossed(g.ideal, s);
-            }
-            if (actual_room < 0) {
-                g.actual.position = actual;
-                g.actual.lap = actual_lap;
-                actual_room = step_crossed(g.actual, s);
-            }
-            if (stretch::splice_due(g, s)) break;
-        }
+    // One frame of both playheads and the tempo clock; true when a play-once
+    // voice has finished.
+    const auto frame = [&]() -> bool {
         const opxy::u32 sum = time_remainder + remainder;
         const opxy::u32 carry = when(sum >= divisor);
         time_remainder = sum - (divisor & carry);
@@ -583,7 +744,76 @@ __attribute__((noinline)) int stretch_run(opxy::i32* output, int i, RunState& ru
         actual_lap -= lapped;
         actual_room = static_cast<opxy::i32>((static_cast<opxy::u32>(actual_room) - pitch_step) | lapped);
         ++i;
-        if (Once && (wrapped || (carry ? crossing1 : crossing0))) {
+        return Once && (wrapped || (carry ? crossing1 : crossing0));
+    };
+    // While no splice can be due, the windows are not stepped: only whether a
+    // countdown ran out (or a playhead wrapped) is remembered, and such a
+    // window is rebuilt at the first frame that checks again.
+    // The skipped frames are a counted loop of the playheads and the clock
+    // alone; the countdowns are settled after it from how far each playhead
+    // went: past its window's edge, or round the loop, is -1, as stepping
+    // would have found at the first frame that checks again.
+    const int quiet = quiet_frames(run, b, s, first);
+    if (quiet) {
+        const int end = first + quiet < kBlock ? first + quiet : kBlock;
+        const opxy::u32 ideal_from = ideal, ideal_lap_from = ideal_lap;
+        const opxy::u32 actual_from = actual, actual_lap_from = actual_lap;
+        while (i < end) {
+            const opxy::u32 sum = time_remainder + remainder;
+            const opxy::u32 carry = when(sum >= divisor);
+            time_remainder = sum - (divisor & carry);
+            const opxy::u32 moved = ideal + advance0 + (extra & carry);
+            const opxy::u32 wrapped = when(moved >= loop);
+            ideal = moved - (loop & wrapped);
+            ideal_lap -= wrapped;
+            positions[i] = actual;
+            const opxy::u32 stepped = actual + pitch_step;
+            const opxy::u32 lapped = when(stepped >= loop);
+            actual = stepped - (loop & lapped);
+            actual_lap -= lapped;
+            ++i;
+            if (Once && (wrapped || (carry ? crossing1 : crossing0))) {
+                run.finished = true;
+                break;
+            }
+        }
+        const auto settle = [](opxy::i32 room, opxy::u32 from, opxy::u32 to, bool lapped) -> opxy::i32 {
+            if (room < 0 || lapped) return -1;
+            const long long left = static_cast<long long>(room) - (static_cast<long long>(to) - static_cast<long long>(from));
+            return left < 0 ? -1 : static_cast<opxy::i32>(left);
+        };
+        ideal_room = settle(ideal_room, ideal_from, ideal, ideal_lap != ideal_lap_from);
+        actual_room = settle(actual_room, actual_from, actual, actual_lap != actual_lap_from);
+        // A window that ran out is brought up to date here, to do what stepping
+        // every frame would have left does, so the next block (whatever its
+        // rates) and the frames after the skip find the same windows.
+        const int skipped = i - first;
+        if (ideal_room < 0) {
+            g.ideal.position = ideal;
+            g.ideal.lap = ideal_lap;
+            ideal_room = resume_window(g.ideal, s, Motion{advance0, extra, remainder, divisor, loop}, time_remainder, skipped);
+        }
+        if (actual_room < 0) {
+            g.actual.position = actual;
+            g.actual.lap = actual_lap;
+            actual_room = resume_window(g.actual, s, Motion{pitch_step, 0u, 0u, 1u, loop}, 0u, skipped);
+        }
+    }
+    while (i < kBlock && !run.finished) {
+        if ((ideal_room | actual_room) < 0) {
+            if (ideal_room < 0) {
+                g.ideal.position = ideal;
+                g.ideal.lap = ideal_lap;
+                ideal_room = step_crossed(g.ideal, s);
+            }
+            if (actual_room < 0) {
+                g.actual.position = actual;
+                g.actual.lap = actual_lap;
+                actual_room = step_crossed(g.actual, s);
+            }
+            if (stretch::splice_due(g, s)) break;
+        }
+        if (frame()) {
             run.finished = true;
             break;
         }

@@ -120,7 +120,13 @@ documentation says how its device routine is checked against that reference.
   has drifted more than 1764 source frames (40 ms at 44.1 kHz) from the
   tempo clock; the block loops check this where a playhead crosses a
   keyframe, so on sparse material the check can come up to a keyframe gap
-  late. Each splice crossfades over 1764 source frames. Incoming grains that
+  late. While the grain is too close to the tempo clock for a splice to come
+  due, the loop does not track keyframes at all: it only moves the playheads,
+  and picks the keyframe windows up again where tracking resumes. The sound
+  is the same, word for word, and ordinary material (drums, pads, noise)
+  costs less to play; `tests/stretch_skip.cpp` checks the loop against one
+  that tracks every frame.
+  Each splice crossfades over 1764 source frames. Incoming grains that
   advance faster than the tempo clock start behind it by 75% of their
   predicted drift during the fade, and every incoming grain is seated half
   a crossfade on the far side of the clock from where it will drift, so
