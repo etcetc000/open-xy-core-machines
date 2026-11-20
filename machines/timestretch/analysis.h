@@ -10,7 +10,8 @@ using opxy::i32;
 constexpr u32 kMaxFrames = 0x000fffffu;
 constexpr u32 kBlockFrames = 256;
 constexpr u32 kBlockWords = 9;
-constexpr i32 kKeyThreshold = 33; // Approximately 0.001 of normalized 16-bit PCM.
+// 0.01 of normalized 16-bit PCM: 327.68, rounded as 0.001 (32.768) was to 33.
+constexpr i32 kKeyThreshold = 328;
 
 struct Analysis {
     opxy::SampleView sample;

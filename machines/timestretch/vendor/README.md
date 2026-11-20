@@ -14,7 +14,8 @@ immutable PCM with Q14 linear interpolation; it is not reconstructed from
 keyframe amplitudes.
 
 Analysis is prepared outside playback. Finite-difference derivative crossings
-use a 33-count amplitude-change threshold (approximately 0.001 normalized PCM).
+use a 328-count amplitude-change threshold (0.01 of normalized PCM; the
+upstream Analyzer uses 0.001).
 Integer key positions are stored in a bitmap with block ranks, without
 fractional positions or amplitudes. A forced key after 256 frames bounds
 neighbor searches; bounded rank/select queries measure the span of adjacent
