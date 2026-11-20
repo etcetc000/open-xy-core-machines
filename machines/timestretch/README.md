@@ -4,8 +4,9 @@ Timestretch plays samples in time with the project, either by repitching or
 with pitch-preserving, Capicola-derived timestretch. It forks the
 stock drum sampler (`"base": "drumSampler"`): each pad has its own sample and settings.
 
-Requires SDK 1.7 or later for tempo-aware lazy chop. Saved BPM/bar memory uses
-the 18-bit settings format introduced in SDK 1.6; older firmware cannot read it.
+Requires SDK 1.17 or later: it uses the SDK's sample kernel and declares 32
+voices, both new in SDK 1.17. Saved BPM/bar memory uses the 18-bit settings
+format introduced in SDK 1.6; older firmware cannot read it.
 
 ## Playing it
 
@@ -74,6 +75,18 @@ the 18-bit settings format introduced in SDK 1.6; older firmware cannot read it.
   forward (`off`) or backward (`on`) playback;
   volume scales the saved volume. Tempo offsets the source BPM by up to ±140
   BPM, or the length by up to ±5 steps. The bundled preset centers them.
+- **Timing in timestretch mode.** A grain may drift from the project's tempo
+  clock by up to 1764 frames of the sample before it is spliced back: 40 ms
+  of a 44.1 kHz sample at its own tempo. The budget counts the sample's
+  frames, so it grows when you slow a loop down and shrinks when you speed it
+  up (a 44.1 kHz loop at half tempo may drift about 80 ms; at 1.5 times its
+  tempo about 27 ms), and a 48 kHz sample gets about 37 ms at its own tempo.
+  Each splice crossfades over 40 ms for a 44.1 kHz sample (about 37 ms at
+  48 kHz), shorter when the pad is tuned up and longer when tuned down. Each
+  new grain starts half the budget (882 frames of the sample) on the other
+  side of the beat, so timing swings around it rather than always running
+  early or late. One known side effect: on a play-once sample the last
+  crossfade can blend up to 882 frames of the region's start.
 - **Analysis.** Timestretch mode needs an analysis of the sample, prepared on
   the stock file worker after assignment; the progress overlay reports it.
   Repitch plays meanwhile; timestretch stays silent until it completes. The
@@ -85,15 +98,15 @@ the 18-bit settings format introduced in SDK 1.6; older firmware cannot read it.
 
 [`sample.cpp`](sample.cpp) renders through the
 [sample engine API](https://github.com/etcetc000/open-xy/blob/staging/docs/api.md#sample-engines). `definition.json`
-declares stereo output, same-key choke, pad settings with drum controls, and a
-2 MiB analysis budget. `sliceTiming` reports the source-frame clock used by lazy chop.
+declares stereo output, same-key choke, pad settings with drum controls, a
+2 MiB analysis budget and 32 voices (`voiceCapacity`; stock starts sample voices
+through 27 voice wrappers). `sliceTiming` reports the source-frame clock used by
+lazy chop.
 Each block computes its playhead positions first, then hands the reads,
-interpolation and pad level to the SDK's sample kernel (`opxy/sample_kernel.hpp`,
-not yet in a public SDK release; this machine builds only against an SDK that
-has it): all repitch frames and the timestretch frames outside a crossfade.
-`tests/sample_kernel.cpp` checks the kernel's C reference word for word against
-the loops it replaced; the device code is proven equal to that reference in the
-SDK's simulator probe, not by this test.
+interpolation, pad level and splice crossfades to the SDK's sample kernel
+(`opxy/sample_kernel.hpp`). `tests/sample_kernel.cpp` checks the kernel's C
+reference word for word against the loops it replaced; the SDK's
+documentation says how its device routine is checked against that reference.
 
 - [`controls.h`](controls.h) packs loop/play, mode and BPM-or-length into the
   pad settings, and implements `sample_defaults`, `sample_assign`,
