@@ -63,8 +63,9 @@ struct Voice {
     opxy::u32 base_rank;
     opxy::u32 key_count;
 };
-// The SDK keeps 256 voices: a byte here is 256 bytes of RAM in every image
-// that carries the machine. The limits hold for 32-bit pointers (the device).
+// The adapter keeps one Voice per voice slot, 32 of them (definition.json): a
+// byte here is 32 bytes of RAM in every image that carries the machine. The
+// limits hold for 32-bit pointers (the device).
 static_assert(sizeof(void*) != 4 || sizeof(RepitchBlock) <= sizeof(stretch::Granule),
               "the repitch cache must fit in the grain's storage");
 static_assert(sizeof(void*) != 4 || sizeof(Voice) <= 220, "Timestretch's voice grew past 220 bytes");
