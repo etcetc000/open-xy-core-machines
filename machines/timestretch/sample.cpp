@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+#include <opxy/sample_kernel.hpp>
 #include "timestretch.h"
 #include "controls.h"
 
@@ -429,67 +430,24 @@ int repitch_positions(opxy::u32* positions, LoopState& state, const TimeStep& st
     state.time_remainder = time_remainder;
     return count;
 }
-// Level: 0 unity, 1 below 2^28 (scale_small), 2 any (scale_sample).
-template <bool Stereo, bool Once, int Level>
-void repitch_stereo(opxy::i32* output, LoopState& state, const TimeStep& step, const opxy::u32* advances,
-                    const bool* crossings, opxy::u32 loop, const RepitchBlock& source, opxy::u32 level) {
+// The block: the playheads here, then the reads, interpolation and pad level
+// in one SDK routine (opxy/sample_kernel.hpp; hand-written on the device).
+template <bool Once>
+void repitch_block(opxy::i32* output, LoopState& state, const RepitchBlock& kept, bool stereo) {
     opxy::u32 positions[kBlock];
-    const int count = repitch_positions<Once>(positions, state, step, advances, crossings, loop);
-    const opxy::u16 low = static_cast<opxy::u16>(level), high = static_cast<opxy::u16>(level >> 16);
-    const opxy::i16 low15 = static_cast<opxy::i16>(level & 32767u), high15 = static_cast<opxy::i16>(level >> 15);
-    const opxy::i16* const origin = source.origin;
-    const opxy::u32 shift = source.shift;
-    // The frame after the region's last is its first. The fraction's top 14
-    // bits, (part >> fraction_right) << fraction_left, are the position shifted
-    // to the top of the word and back down by 18 (shift is at least 11).
-    const opxy::u32 last = (source.frames - 1u) << shift, up = 32u - shift;
-    // A frame's offset from origin is its number times the stride (+-channels):
-    // negate for reverse ((n ^ flip) - flip), then shift by log2(channels).
-    const opxy::u32 flip = when(source.stride < 0);
-    const opxy::u32 width = Stereo ? 1u : 0u;
-    const opxy::u32 stride = static_cast<opxy::u32>(source.stride);
-    for (int i = 0; i < count; ++i) {
-        const opxy::u32 position = positions[i];
-        const opxy::u32 offset = ((position >> shift) ^ flip) - flip;
-        const opxy::u32 following = (offset + (stride >> width)) & ~when(position >= last);
-        const opxy::i16* const at = origin + static_cast<opxy::i32>(offset << width);
-        const opxy::i16* const after = origin + static_cast<opxy::i32>(following << width);
-        const opxy::i32 fraction = static_cast<opxy::i32>((position << up) >> 18);
-        const opxy::i16 rest = static_cast<opxy::i16>(16384 - fraction), part = static_cast<opxy::i16>(fraction);
-        // a + (b - a) * f >> 14 as the equal (a * (16384 - f) + b * f) >> 14:
-        // two 16 x 16-bit products.
-        const opxy::i32 left = (opxy::i32(at[0]) * rest + opxy::i32(after[0]) * part) >> 14;
-        const opxy::i32 right = Stereo ? (opxy::i32(at[1]) * rest + opxy::i32(after[1]) * part) >> 14 : left;
-        output[2 * i] = Level == 2 ? scale_sample(left, low, high) : Level == 1 ? scale_small(left, low15, high15) : left * 32768;
-        output[2 * i + 1] = Level == 2 ? scale_sample(right, low, high) :
-                            Level == 1 ? scale_small(right, low15, high15) : right * 32768;
-    }
+    const TimeStep step{0, kept.remainder, kept.divisor, 0};
+    const int count = repitch_positions<Once>(positions, state, step, kept.advances, kept.crossings, kept.loop);
+    const opxy::SampleTaps taps{kept.origin, kept.shift, (kept.frames - 1u) << kept.shift,
+                                kept.stride < 0 ? 1u : 0u, stereo ? 2u : 1u, kept.level};
+    opxy::sample_interpolate(output, positions, static_cast<opxy::u32>(count), taps);
     for (int i = count; i < kBlock; ++i) {
         output[2 * i] = 0;
         output[2 * i + 1] = 0;
     }
 }
-
-// The repitch loop's instance for this block's sample layout, play-once and level.
-template <bool Stereo, bool Once>
-void run_level(opxy::i32* output, LoopState& state, const RepitchBlock& kept) {
-    const opxy::u32 level = kept.level;
-    const TimeStep step{0, kept.remainder, kept.divisor, 0};
-    if (level == opxy::sample_unity_level)
-        repitch_stereo<Stereo, Once, 0>(output, state, step, kept.advances, kept.crossings, kept.loop, kept, level);
-    else if (level < 0x10000000u)
-        repitch_stereo<Stereo, Once, 1>(output, state, step, kept.advances, kept.crossings, kept.loop, kept, level);
-    else
-        repitch_stereo<Stereo, Once, 2>(output, state, step, kept.advances, kept.crossings, kept.loop, kept, level);
-}
 void run_repitch(opxy::i32* output, LoopState& state, const RepitchBlock& kept, bool stereo, bool once) {
-    if (stereo) {
-        if (once) run_level<true, true>(output, state, kept);
-        else run_level<true, false>(output, state, kept);
-    } else {
-        if (once) run_level<false, true>(output, state, kept);
-        else run_level<false, false>(output, state, kept);
-    }
+    if (once) repitch_block<true>(output, state, kept, stereo);
+    else repitch_block<false>(output, state, kept, stereo);
 }
 }
 
@@ -505,24 +463,6 @@ inline opxy::i32 window_room(const stretch::Reference& h) {
     const stretch::Cursor& c = h.window;
     return c.lap == h.lap && h.position >= c.left ? static_cast<opxy::i32>(c.left + c.width - h.position) : -1;
 }
-// stretch::read_frame's interpolation with the frame address as a shift and a
-// sign and the interpolation as (a * (16384 - f) + b * f) >> 14.
-struct FrameReader {
-    const opxy::i16* origin;
-    opxy::u32 shift, last, up, flip;
-    template <bool Stereo>
-    void read(opxy::u32 position, opxy::i32& left, opxy::i32& right) const {
-        const opxy::u32 width = Stereo ? 1u : 0u;
-        const opxy::u32 offset = ((position >> shift) ^ flip) - flip;
-        const opxy::u32 following = (offset + (flip | 1u)) & ~when(position >= last);
-        const opxy::i16* const at = origin + static_cast<opxy::i32>(offset << width);
-        const opxy::i16* const after = origin + static_cast<opxy::i32>(following << width);
-        const opxy::i32 fraction = static_cast<opxy::i32>((position << up) >> 18);
-        const opxy::i16 rest = static_cast<opxy::i16>(16384 - fraction), part = static_cast<opxy::i16>(fraction);
-        left = (opxy::i32(at[0]) * rest + opxy::i32(after[0]) * part) >> 14;
-        right = Stereo ? (opxy::i32(at[1]) * rest + opxy::i32(after[1]) * part) >> 14 : left;
-    }
-};
 struct StretchBlock {
     TimeStep step;
     opxy::u32 advances[2];
@@ -599,9 +539,9 @@ struct RunState {
     opxy::u32 time_remainder;
     bool finished;
 };
-template <bool Stereo, bool Once>
+template <bool Once>
 __attribute__((noinline)) int stretch_run(opxy::i32* output, int i, RunState& run, const StretchBlock& b,
-                                           const FrameReader& reader, stretch::Granule& g, const stretch::Source& s) {
+                                           const opxy::SampleTaps& taps, stretch::Granule& g, const stretch::Source& s) {
     opxy::u32 ideal = run.ideal.position, ideal_lap = run.ideal.lap;
     opxy::i32 ideal_room = run.ideal.room;
     opxy::u32 actual = run.actual.position, actual_lap = run.actual.lap;
@@ -653,13 +593,9 @@ __attribute__((noinline)) int stretch_run(opxy::i32* output, int i, RunState& ru
     run.ideal.position = ideal; run.ideal.lap = ideal_lap; run.ideal.room = ideal_room;
     run.actual.position = actual; run.actual.lap = actual_lap; run.actual.room = actual_room;
     run.time_remainder = time_remainder;
-    const FrameReader r = reader;
-    for (int k = first; k < i; ++k) {
-        opxy::i32 left, right;
-        r.read<Stereo>(positions[k], left, right);
-        output[2 * k] = left * 32768;
-        output[2 * k + 1] = right * 32768;
-    }
+    // The reads: the SDK's sample routine at unity level, the same words as
+    // stretch::read_frame times 32768.
+    opxy::sample_interpolate(output + 2 * first, positions + first, static_cast<opxy::u32>(i - first), taps);
     return i;
 }
 // Kept out of render_block so the per-frame loop is one contiguous body.
@@ -671,7 +607,8 @@ __attribute__((noinline)) void stretch_stereo(opxy::i32* output, stretch::Granul
     const opxy::u32 loop = b.loop, pitch_step = b.pitch_step, remainder = b.step.remainder, divisor = b.step.divisor;
     const opxy::u32 advance0 = b.advances[0], extra = b.advances[1] - b.advances[0];
     const bool once = b.play_once, crossing0 = once && b.crossings[0], crossing1 = once && b.crossings[1];
-    const FrameReader reader{s.origin, s.shift, (s.frames - 1u) << s.shift, 32u - s.shift, when(s.stride < 0)};
+    const opxy::SampleTaps taps{s.origin, s.shift, (s.frames - 1u) << s.shift, s.stride < 0 ? 1u : 0u, Stereo ? 2u : 1u,
+                                opxy::sample_unity_level};
     Head ideal, actual;
     ideal.load(g.ideal);
     actual.load(g.actual);
@@ -681,8 +618,22 @@ __attribute__((noinline)) void stretch_stereo(opxy::i32* output, stretch::Granul
     // the same steps and wrap at the same loop, so they are equal; where that
     // holds at the block's start, the run below keeps one of them.
     const bool merged = ideal.position == position;
+    // Frames outside a run: each records the frame it plays (the actual
+    // playhead, the incoming one and the fade's weight while splicing; the
+    // actual one twice and weight 0 otherwise, which reads it exactly), and the
+    // reads and mixes run as one SDK pass over each stretch of such frames.
+    opxy::u32 from[kBlock], to[kBlock];
+    opxy::u16 weights[kBlock];
+    int pending = -1;
+    const auto flush = [&]() {
+        if (pending < 0) return;
+        const opxy::SampleFade fade{from + pending, to + pending, weights + pending};
+        opxy::sample_crossfade(output + 2 * pending, fade, static_cast<opxy::u32>(i - pending), taps);
+        pending = -1;
+    };
     while (i < kBlock) {
         if (finished) {
+            flush();
             for (; i < kBlock; ++i) {
                 output[2 * i] = 0;
                 output[2 * i + 1] = 0;
@@ -692,9 +643,10 @@ __attribute__((noinline)) void stretch_stereo(opxy::i32* output, stretch::Granul
         // A run: frames with no window to step, no splice due or under way and
         // the voice still playing; it ends at the first frame that needs any.
         if (merged && !g.splicing && !due) {
+            flush();
             RunState run{ideal, actual, time_remainder, false};
-            i = once ? stretch_run<Stereo, true>(output, i, run, b, reader, g, s) :
-                       stretch_run<Stereo, false>(output, i, run, b, reader, g, s);
+            i = once ? stretch_run<true>(output, i, run, b, taps, g, s) :
+                       stretch_run<false>(output, i, run, b, taps, g, s);
             ideal = run.ideal;
             actual = run.actual;
             time_remainder = run.time_remainder;
@@ -723,17 +675,15 @@ __attribute__((noinline)) void stretch_stereo(opxy::i32* output, stretch::Granul
             due = false;
         }
         ideal.advance(advance, loop);
-        opxy::i32 left, right;
-        reader.read<Stereo>(actual.position, left, right);
+        if (pending < 0) pending = i;
+        from[i] = actual.position;
+        to[i] = actual.position;
+        weights[i] = 0;
         actual.advance(pitch_step, loop);
         if (g.splicing) {
-            opxy::i32 next_left, next_right;
-            reader.read<Stereo>(g.temp.position, next_left, next_right);
-            // stretch::mix as (a * (16384 - w) + b * w) >> 14.
-            const opxy::u32 weight = stretch::smooth(g.fade >> 16);
-            const opxy::i32 keep = static_cast<opxy::i32>(16384u - weight), take = static_cast<opxy::i32>(weight);
-            left = (left * keep + next_left * take) >> 14;
-            right = (right * keep + next_right * take) >> 14;
+            // stretch::mix as (a * (16384 - w) + b * w) >> 14, in the SDK pass.
+            to[i] = g.temp.position;
+            weights[i] = static_cast<opxy::u16>(stretch::smooth(g.fade >> 16));
             stretch::advance(g.temp, s, pitch_step);
             g.fade += g.fade_increment;
             if (g.fade >= 0x40000000u) {
@@ -744,14 +694,13 @@ __attribute__((noinline)) void stretch_stereo(opxy::i32* output, stretch::Granul
                 due = stretch::splice_due(g, s);
             }
         }
-        output[2 * i] = left * 32768;
-        output[2 * i + 1] = right * 32768;
         const opxy::u32 moved = position + advance;
         const bool wrapped = moved >= loop;
         position = wrapped ? moved - loop : moved;
         finished = (once && wrapped) || (carry ? crossing1 : crossing0);
         ++i;
     }
+    flush();
     ideal.store(g.ideal);
     actual.store(g.actual);
     state.position = position;

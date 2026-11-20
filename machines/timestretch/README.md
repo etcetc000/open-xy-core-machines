@@ -87,6 +87,13 @@ the 18-bit settings format introduced in SDK 1.6; older firmware cannot read it.
 [sample engine API](https://github.com/etcetc000/open-xy/blob/staging/docs/api.md#sample-engines). `definition.json`
 declares stereo output, same-key choke, pad settings with drum controls, and a
 2 MiB analysis budget. `sliceTiming` reports the source-frame clock used by lazy chop.
+Each block computes its playhead positions first, then hands the reads,
+interpolation and pad level to the SDK's sample kernel (`opxy/sample_kernel.hpp`,
+not yet in a public SDK release; this machine builds only against an SDK that
+has it): all repitch frames and the timestretch frames outside a crossfade.
+`tests/sample_kernel.cpp` checks the kernel's C reference word for word against
+the loops it replaced; the device code is proven equal to that reference in the
+SDK's simulator probe, not by this test.
 
 - [`controls.h`](controls.h) packs loop/play, mode and BPM-or-length into the
   pad settings, and implements `sample_defaults`, `sample_assign`,
