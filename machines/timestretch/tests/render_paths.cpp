@@ -109,8 +109,10 @@ int main() {
                 if (wide.stretching && wide.grains_ready) {
                     require(wide.grain.splicing == narrow.grain.splicing && wide.grain.fade == narrow.grain.fade &&
                             wide.grain.actual.position == narrow.grain.actual.position &&
-                            wide.grain.actual.window.index == narrow.grain.actual.window.index &&
-                            wide.grain.ideal.window.index == narrow.grain.ideal.window.index,
+                            wide.grain.actual.window.left == narrow.grain.actual.window.left &&
+                            wide.grain.actual.window.width == narrow.grain.actual.window.width &&
+                            wide.grain.ideal.window.left == narrow.grain.ideal.window.left &&
+                            wide.grain.ideal.window.width == narrow.grain.ideal.window.width,
                             "grain equals the general loop's");
                     splicing += wide.grain.splicing;
                 }

@@ -152,21 +152,6 @@ inline u32 last_bit(u32 x) {
 inline u32 mask_word(const Analysis& analysis, u32 word) {
     return analysis.words[(word >> 3) * kBlockWords + 1 + (word & 7)];
 }
-// Count keyframes strictly before n. The last partial block is handled without
-// indexing beyond its allocation, including an exact 256-frame boundary.
-static inline u32 rank(const Analysis& analysis, u32 n) {
-    if (!n) return 0;
-    if (n > analysis.sample.frames) n = analysis.sample.frames;
-    const u32 frame = n - 1;
-    const u32 block = (frame >> 8) * kBlockWords;
-    const u32 word = (frame & 255) >> 5;
-    u32 count = analysis.words[block];
-    for (u32 i = 0; i < 8; ++i) {
-        if (i < word) count += population(analysis.words[block + 1 + i]);
-    }
-    count += population(analysis.words[block + 1 + word] & (0xffffffffu >> (31 - (frame & 31))));
-    return count;
-}
 // Consecutive keys are at most 256 frames apart. Nine bitmap reads find a neighbor;
 // the endpoint sentinel is returned when no later key exists in the sample.
 inline u32 previous_key(const Analysis& analysis, u32 frame) {

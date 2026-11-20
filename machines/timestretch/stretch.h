@@ -20,7 +20,6 @@ inline u32 smooth(u32 p) {
 inline i32 mix(i32 a, i32 b, u32 p) {
     return a + ((b - a) * static_cast<i32>(p) >> 14);
 }
-struct Key { u32 position; u32 ordinal; };
 struct Source {
     opxy::SampleView sample;
     u32 begin;
@@ -29,8 +28,6 @@ struct Source {
     u32 loop;
     bool reverse;
     const Analysis* analysis;
-    u32 base_rank;
-    u32 key_count;
     // PCM addressing, fixed for the block: frame n of the region (in playback
     // order) starts at origin + n * stride.
     const opxy::i16* origin;
@@ -44,63 +41,49 @@ struct Source {
         fraction_right = shift >= 14 ? shift - 14 : 0;
         fraction_left = shift >= 14 ? 0 : 14 - shift;
     }
-    void configure() {
-        base_rank = rank(*analysis, begin + 1);
-        key_count = rank(*analysis, begin + frames) - base_rank + 1;
-    }
     u32 key_position(u32 anchor) const {
         return (reverse ? begin + frames - 1 - anchor : anchor - begin) << shift;
-    }
-    Key point(u32 anchor) const {
-        const u32 forward = rank(*analysis, anchor) + 1 - base_rank;
-        return Key{key_position(anchor), reverse ? key_count - forward : forward};
     }
 };
 // Only grain timing follows the sparse keyframe grid. Audio comes directly
 // from PCM, so the cursor carries neither amplitudes nor interpolation state.
-struct Cursor { u32 left, width, index, lap, next_anchor; };
+struct Cursor { u32 left, width, lap, next_anchor; };
 struct Reference { u32 position; Cursor window; u32 lap; };
 static inline Cursor cursor(const Source& s, u32 position, u32 lap) {
     const u32 frame = position >> s.shift;
-    u32 left = 0, right = s.loop, ordinal = 0, next_anchor = 0;
+    u32 left = 0, right = s.loop, next_anchor = 0;
     if (s.reverse) {
         const u32 physical = s.begin + s.frames - 1 - frame;
         u32 before = next_key(*s.analysis, physical ? physical - 1 : 0);
         if (before > s.begin && before < s.begin + s.frames) {
-            Key key = s.point(before);
-            if (key.position > position) {
+            u32 key = s.key_position(before);
+            if (key > position) {
                 before = next_key(*s.analysis, before);
-                if (before < s.begin + s.frames) key = s.point(before);
+                if (before < s.begin + s.frames) key = s.key_position(before);
             }
-            if (before < s.begin + s.frames) {
-                left = key.position; ordinal = key.ordinal;
-            }
+            if (before < s.begin + s.frames) left = key;
         }
         const u32 after = previous_key(*s.analysis, before < s.begin + s.frames ? before - 1 : s.begin + s.frames - 1);
         if (after > s.begin) {
-            const Key key = s.point(after);
-            right = key.position; next_anchor = after;
+            right = s.key_position(after); next_anchor = after;
         }
     } else {
         const u32 physical = s.begin + frame;
         u32 before = previous_key(*s.analysis, physical + 1 < s.begin + s.frames ? physical + 1 : physical);
         if (before > s.begin) {
-            Key key = s.point(before);
-            if (key.position > position) {
+            u32 key = s.key_position(before);
+            if (key > position) {
                 before = previous_key(*s.analysis, before - 1);
-                if (before > s.begin) key = s.point(before);
+                if (before > s.begin) key = s.key_position(before);
             }
-            if (before > s.begin) {
-                left = key.position; ordinal = key.ordinal;
-            }
+            if (before > s.begin) left = key;
         }
         const u32 after = next_key(*s.analysis, before > s.begin ? before : s.begin);
         if (after < s.begin + s.frames) {
-            const Key key = s.point(after);
-            right = key.position; next_anchor = after;
+            right = s.key_position(after); next_anchor = after;
         }
     }
-    return Cursor{left, right - left, lap * s.key_count + ordinal, lap, next_anchor};
+    return Cursor{left, right - left, lap, next_anchor};
 }
 static inline void step_reference(Reference& h, const Source& s) {
     Cursor& c = h.window;
@@ -116,7 +99,7 @@ static inline void step_reference(Reference& h, const Source& s) {
             }
             if (h.position <= right) {
                 const u32 left = c.left + c.width;
-                c = Cursor{left, right - left, c.index + 1, h.lap, next_anchor};
+                c = Cursor{left, right - left, h.lap, next_anchor};
                 return;
             }
         }

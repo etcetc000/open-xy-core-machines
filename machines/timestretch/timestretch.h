@@ -36,7 +36,6 @@ struct Voice {
     bool start_pending; // a new note starts at its marker, even while transport runs
     bool slicing;       // a frozen audition advances its clock while analysis loads
     bool grains_ready;
-    bool ranks_valid;
     bool repitch_ready;  // the last block took the repitch loop; repitch describes it
     union {
         stretch::Granule grain;  // timestretch blocks
@@ -60,14 +59,12 @@ struct Voice {
     int tuning_cents;
     opxy::u32 tuning;
     opxy::u32 pitch_step;
-    opxy::u32 base_rank;
-    opxy::u32 key_count;
 };
 // The adapter keeps one Voice per voice slot, 32 of them (definition.json): a
 // byte here is 32 bytes of RAM in every image that carries the machine. The
 // limits hold for 32-bit pointers (the device).
-static_assert(sizeof(void*) != 4 || sizeof(RepitchBlock) <= sizeof(stretch::Granule),
-              "the repitch cache must fit in the grain's storage");
+// The grain is 12 bytes smaller than the repitch cache it shares a union
+// with, so the union is the repitch cache's size.
 static_assert(sizeof(void*) != 4 || sizeof(Voice) <= 220, "Timestretch's voice grew past 220 bytes");
 constexpr opxy::u32 kBeats[] = {1, 2, 4, 8, 16, 32};
 

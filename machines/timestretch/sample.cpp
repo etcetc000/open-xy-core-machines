@@ -268,7 +268,6 @@ void initialize(Voice& voice, const opxy::SampleView& sample) {
 void bind_analysis(Voice& voice, const opxy::SampleAnalysis* analysis) {
     if (voice.analysis == analysis) return;
     voice.analysis = analysis;
-    voice.ranks_valid = false;
     voice.grains_ready = false;
     // A tap clock starts with the audition note. Analysis arriving later must
     // seed grains at its elapsed source position, without restarting that clock.
@@ -283,7 +282,6 @@ void region(Voice& voice, opxy::u32 begin, opxy::u32 end, bool reverse) {
     voice.region_end = end < voice.sample.frames ? end : voice.sample.frames;
     const opxy::u32 frames = voice.region_end > voice.region_begin ? voice.region_end - voice.region_begin : 0;
     voice.shift = fraction_shift(frames);
-    voice.ranks_valid = false;
     voice.time_step.divisor = 0;
     voice.tuning = 0;
     voice.position = 0;
@@ -517,7 +515,7 @@ inline opxy::i32 step_crossed(stretch::Reference& h, const stretch::Source& s) {
                 const opxy::u32 right = (key - s.begin) << s.shift;
                 if (h.position <= right) {
                     const opxy::u32 left = c.left + c.width;
-                    c = stretch::Cursor{left, right - left, c.index + 1u, h.lap, key};
+                    c = stretch::Cursor{left, right - left, h.lap, key};
                     return static_cast<opxy::i32>(right - h.position);
                 }
             }
@@ -748,20 +746,13 @@ static bool render_block(Voice& voice, opxy::i32* output, const opxy::i32* param
         voice.sync_pending = true;
         return true;
     }
-    stretch::Source source{voice.sample, voice.region_begin, frames, shift, loop, voice.reverse, analysis, 0, 0};
+    stretch::Source source{voice.sample, voice.region_begin, frames, shift, loop, voice.reverse, analysis};
     const bool stereo = voice.sample.channels == 2;
     if (stretch_ready) {
         // Use the more active channel for timing; both PCM channels retain
         // their original order and share playhead positions and crossfades.
         if (stereo && analysis->right->activity > analysis->activity)
             source.analysis = analysis->right;
-        if (!voice.ranks_valid) {
-            source.configure();
-            voice.base_rank = source.base_rank;
-            voice.key_count = source.key_count;
-            voice.ranks_valid = true;
-        }
-        source.base_rank = voice.base_rank; source.key_count = voice.key_count;
     }
     if (stretching != voice.stretching) {
         voice.stretching = stretching;
