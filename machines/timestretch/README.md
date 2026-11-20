@@ -123,8 +123,9 @@ documentation says how its device routine is checked against that reference.
   late. While the grain is too close to the tempo clock for a splice to come
   due, the loop does not track keyframes at all: it only moves the playheads,
   and picks the keyframe windows up again where tracking resumes. The sound
-  is the same, word for word, and ordinary material (drums, pads, noise)
-  costs less to play; `tests/stretch_skip.cpp` checks the loop against one
+  is unchanged on every case tested, and most material costs less to play;
+  where the grain splices constantly nothing is skipped and the cost is
+  about the same. `tests/stretch_skip.cpp` checks the loop against one
   that tracks every frame.
   Each splice crossfades over 1764 source frames. Incoming grains that
   advance faster than the tempo clock start behind it by 75% of their
