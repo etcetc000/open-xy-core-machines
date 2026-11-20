@@ -150,7 +150,10 @@ inline void advance(Reference& h, const Source& s, u32 step) {
 }
 // Interpolate the original stereo frame once, sharing positions and weights.
 // The caller has validated the sample and kept the position inside the trim.
-static inline void read_pcm(const Source& s, u32 position, i32& left, i32& right) {
+// Stereo is the sample's layout, fixed for a voice: callers that know it per
+// block use this form, so the per-sample loop carries no channel test.
+template <bool Stereo>
+static inline void read_frame(const Source& s, u32 position, i32& left, i32& right) {
     const u32 whole = position >> s.shift;
     const u32 next = whole + 1 < s.frames ? whole + 1 : 0;
     const u32 part = position & ((1u << s.shift) - 1);
@@ -159,11 +162,14 @@ static inline void read_pcm(const Source& s, u32 position, i32& left, i32& right
     const opxy::i16* after = s.origin + static_cast<i32>(next) * s.stride;
     const i32 a = at[0], b = after[0];
     left = a + ((b - a) * fraction >> 14);
-    right = left;
-    if (s.sample.channels == 2) {
+    if (Stereo) {
         const i32 c = at[1], d = after[1];
         right = c + ((d - c) * fraction >> 14);
-    }
+    } else right = left;
+}
+static inline void read_pcm(const Source& s, u32 position, i32& left, i32& right) {
+    if (s.sample.channels == 2) read_frame<true>(s, position, left, right);
+    else read_frame<false>(s, position, left, right);
 }
 struct Granule {
     Reference ideal;
@@ -183,42 +189,50 @@ static inline void spawn(Granule& g, const Source& s, u32 position) {
     g.fade_increment = 0;
     g.splicing = false;
 }
+// A grain splice begins: the incoming grain at the ideal clock, its fade.
+static void splice_begin(Granule& g, const Source& s, u32 time_step, u32 pitch_step, u32 tuning) {
+    const u32 delta = g.actual.window.index - g.ideal.window.index;
+    g.temp = g.ideal;
+    // Use the keyframe span to adapt the grain's crossfade duration.
+    // Immutable samples have no moving writer fence/runway to clamp.
+    const u32 local_index = g.ideal.window.index - g.ideal.window.lap * s.key_count;
+    const u32 duration = s.fade_frames(local_index, delta >= 0x80000000u);
+    const u32 rate = s.sample.rate >= 8000 && s.sample.rate <= 192000 ? s.sample.rate : 44100;
+    const u32 outputs = duration * 44100u / rate;
+    g.fade_step = 0x40000000u / (outputs ? outputs : 1);
+    // Seat an incoming grain behind the clock by 75% of its predicted
+    // forward drift during the fade. Leave the ideal clock unchanged.
+    g.fade_increment = scale_pitch(g.fade_step, tuning);
+    if (pitch_step > time_step && g.fade_increment) {
+        const u32 fade_ticks = (0x40000000u - 1u) / g.fade_increment + 1u;
+        const u32 ticks = (fade_ticks / 4u) * 3u + ((fade_ticks % 4u) * 3u) / 4u;
+        const u32 drift = pitch_step - time_step;
+        // Bound before multiplying; at most a quarter-loop rewind.
+        const u32 limit = s.loop / 4u;
+        u32 offset = ticks && drift > limit / ticks ? limit : drift * ticks;
+        // Never read a previous lap before playback has reached one.
+        if (!g.temp.lap && offset > g.temp.position) offset = g.temp.position;
+        if (offset > g.temp.position) {
+            g.temp.position = s.loop - (offset - g.temp.position);
+            --g.temp.lap;
+        } else g.temp.position -= offset;
+        g.temp.window = cursor(s, g.temp.position, g.temp.lap);
+    }
+    g.fade = 0;
+    g.splicing = true;
+}
+// Whether a splice begins: the actual grain leads or trails the ideal clock
+// by more than the leash, in keyframes.
+static inline bool splice_due(const Granule& g) {
+    const u32 delta = g.actual.window.index - g.ideal.window.index;
+    const u32 lead = delta < 0x80000000u ? delta : 0u - delta;
+    return !g.splicing && lead > kLeash;
+}
 static inline void render(Granule& g, const Source& s, u32 time_step, u32 pitch_step,
                           u32 tuning, i32& left, i32& right) {
     step_reference(g.ideal, s);
     step_reference(g.actual, s);
-    const u32 delta = g.actual.window.index - g.ideal.window.index;
-    const u32 lead = delta < 0x80000000u ? delta : 0u - delta;
-    if (!g.splicing && lead > kLeash) {
-        g.temp = g.ideal;
-        // Use the keyframe span to adapt the grain's crossfade duration.
-        // Immutable samples have no moving writer fence/runway to clamp.
-        const u32 local_index = g.ideal.window.index - g.ideal.window.lap * s.key_count;
-        const u32 duration = s.fade_frames(local_index, delta >= 0x80000000u);
-        const u32 rate = s.sample.rate >= 8000 && s.sample.rate <= 192000 ? s.sample.rate : 44100;
-        const u32 outputs = duration * 44100u / rate;
-        g.fade_step = 0x40000000u / (outputs ? outputs : 1);
-        // Seat an incoming grain behind the clock by 75% of its predicted
-        // forward drift during the fade. Leave the ideal clock unchanged.
-        g.fade_increment = scale_pitch(g.fade_step, tuning);
-        if (pitch_step > time_step && g.fade_increment) {
-            const u32 fade_ticks = (0x40000000u - 1u) / g.fade_increment + 1u;
-            const u32 ticks = (fade_ticks / 4u) * 3u + ((fade_ticks % 4u) * 3u) / 4u;
-            const u32 drift = pitch_step - time_step;
-            // Bound before multiplying; at most a quarter-loop rewind.
-            const u32 limit = s.loop / 4u;
-            u32 offset = ticks && drift > limit / ticks ? limit : drift * ticks;
-            // Never read a previous lap before playback has reached one.
-            if (!g.temp.lap && offset > g.temp.position) offset = g.temp.position;
-            if (offset > g.temp.position) {
-                g.temp.position = s.loop - (offset - g.temp.position);
-                --g.temp.lap;
-            } else g.temp.position -= offset;
-            g.temp.window = cursor(s, g.temp.position, g.temp.lap);
-        }
-        g.fade = 0;
-        g.splicing = true;
-    }
+    if (splice_due(g)) splice_begin(g, s, time_step, pitch_step, tuning);
     advance(g.ideal, s, time_step);
     read_pcm(s, g.actual.position, left, right);
     advance(g.actual, s, pitch_step);

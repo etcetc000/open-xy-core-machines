@@ -10,6 +10,23 @@
 // Fixed-point arithmetic; no audio callback allocations.
 namespace timestretch {
 struct TimeStep { opxy::u32 value, remainder, divisor, whole; };
+// A repitch block's inputs, packed (block_inputs), and what render derived
+// from them for its loop: only what the loop reads. The next block with
+// identical inputs reuses them (render_sample). It shares storage with the
+// grain (Voice): only repitch blocks use it, only timestretch blocks use the
+// grain, and every change of mode respawns the grain before it is read.
+constexpr unsigned kRepitchInputs = 15;
+struct RepitchBlock {
+    opxy::u32 inputs[kRepitchInputs];
+    const opxy::i16* origin;      // stretch::Source's PCM addressing
+    opxy::u32 frames, loop;
+    opxy::u32 remainder, divisor; // the TimeStep fields the loop reads
+    opxy::u32 advances[2];
+    opxy::u32 level;
+    opxy::u8 shift;
+    opxy::i8 stride;
+    bool crossings[2];
+};
 struct Voice {
     opxy::SampleView sample;
     const opxy::SampleAnalysis* analysis;  // the SDK cache entry; immutable while the voice lives
@@ -20,7 +37,11 @@ struct Voice {
     bool slicing;       // a frozen audition advances its clock while analysis loads
     bool grains_ready;
     bool ranks_valid;
-    stretch::Granule grain;
+    bool repitch_ready;  // the last block took the repitch loop; repitch describes it
+    union {
+        stretch::Granule grain;  // timestretch blocks
+        RepitchBlock repitch;    // repitch blocks
+    };
     bool stretching;
     opxy::u32 region_begin;
     opxy::u32 region_end;
@@ -42,6 +63,11 @@ struct Voice {
     opxy::u32 base_rank;
     opxy::u32 key_count;
 };
+// The SDK keeps 256 voices: a byte here is 256 bytes of RAM in every image
+// that carries the machine. The limits hold for 32-bit pointers (the device).
+static_assert(sizeof(void*) != 4 || sizeof(RepitchBlock) <= sizeof(stretch::Granule),
+              "the repitch cache must fit in the grain's storage");
+static_assert(sizeof(void*) != 4 || sizeof(Voice) <= 220, "Timestretch's voice grew past 220 bytes");
 constexpr opxy::u32 kBeats[] = {1, 2, 4, 8, 16, 32};
 
 opxy::u32 beats(opxy::i32 parameter);
@@ -66,6 +92,8 @@ void bind_analysis(Voice&, const opxy::SampleAnalysis*);
 void region(Voice&, opxy::u32 begin, opxy::u32 end, bool reverse = false);
 // Scale by a SampleRegion level (unsigned Q27; opxy::sample_unity_level is unity).
 void gain(opxy::i32* output, opxy::u32 value, opxy::u32 channels = 1);
+// gain() for render()'s own output only: every word a 16-bit value times 32768.
+void gain_rendered(opxy::i32* output, opxy::u32 value, opxy::u32 channels);
 void render(Voice&, opxy::i32* output, const opxy::i32* parameters, const opxy::u32* increments,
             const opxy::Transport&, opxy::u32 output_channels = 1);
 }
