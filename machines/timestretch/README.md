@@ -94,12 +94,19 @@ declares stereo output, same-key choke, pad settings with drum controls, and a
   file-name BPM and suggests a length.
 - [`analysis.h`](analysis.h) prepares a keyframe bitmap per channel: positions
   where the derivative changes sign, at most 256 frames apart. Playback reads
-  the original PCM; keyframes only time grain splices.
+  the original PCM; keyframes only time when grain splices are checked.
   [`stretch.h`](stretch.h) plays grains with linear interpolation and shares
-  playheads and crossfades between channels. Incoming grains that advance
-  faster than the tempo clock start behind it by 75% of their predicted
-  drift during the fade, reducing early attacks without shifting the loop
-  clock. This offset is bounded to a quarter of the trimmed loop and cannot
-  precede initial playback.
+  playheads and crossfades between channels. A splice is due once the grain
+  has drifted more than 1764 source frames (40 ms at 44.1 kHz) from the
+  tempo clock; the block loops check this where a playhead crosses a
+  keyframe, so on sparse material the check can come up to a keyframe gap
+  late. Each splice crossfades over 1764 source frames. Incoming grains that
+  advance faster than the tempo clock start behind it by 75% of their
+  predicted drift during the fade, and every incoming grain is seated half
+  a crossfade on the far side of the clock from where it will drift, so
+  timing swings around the beat instead of always running early when slowed
+  or late when sped up. Both offsets are bounded to a quarter of the trimmed
+  loop and cannot precede initial playback. Mono output renders the stereo
+  block and folds it, so both layouts splice at the same frames.
 
 See the [upstream revision and AGPL notices](vendor/README.md).

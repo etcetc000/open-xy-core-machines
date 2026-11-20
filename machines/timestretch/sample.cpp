@@ -627,7 +627,7 @@ __attribute__((noinline)) int stretch_run(opxy::i32* output, int i, RunState& ru
                 g.actual.lap = actual_lap;
                 actual_room = step_crossed(g.actual, s);
             }
-            if (stretch::splice_due(g)) break;
+            if (stretch::splice_due(g, s)) break;
         }
         const opxy::u32 sum = time_remainder + remainder;
         const opxy::u32 carry = when(sum >= divisor);
@@ -675,7 +675,7 @@ __attribute__((noinline)) void stretch_stereo(opxy::i32* output, stretch::Granul
     Head ideal, actual;
     ideal.load(g.ideal);
     actual.load(g.actual);
-    bool due = stretch::splice_due(g);
+    bool due = stretch::splice_due(g, s);
     int i = 0;
     // The ideal playhead is spawned at the voice's position and both advance by
     // the same steps and wrap at the same loop, so they are equal; where that
@@ -700,7 +700,7 @@ __attribute__((noinline)) void stretch_stereo(opxy::i32* output, stretch::Granul
             time_remainder = run.time_remainder;
             finished = run.finished;
             position = ideal.position;
-            due = stretch::splice_due(g);
+            due = stretch::splice_due(g, s);
             // The run stopped where a splice is due (with both windows
             // stepped), at the block's end or when the voice finished.
             if (!due) continue;
@@ -714,7 +714,7 @@ __attribute__((noinline)) void stretch_stereo(opxy::i32* output, stretch::Granul
         if ((ideal.room | actual.room) < 0) {
             if (ideal.room < 0) { ideal.store(g.ideal); stretch::step_reference(g.ideal, s); ideal.load(g.ideal); }
             if (actual.room < 0) { actual.store(g.actual); stretch::step_reference(g.actual, s); actual.load(g.actual); }
-            due = stretch::splice_due(g);
+            due = stretch::splice_due(g, s);
         }
         if (due) {
             ideal.store(g.ideal);
@@ -741,7 +741,7 @@ __attribute__((noinline)) void stretch_stereo(opxy::i32* output, stretch::Granul
                 g.splicing = false;
                 ideal.store(g.ideal);
                 actual.load(g.actual);
-                due = stretch::splice_due(g);
+                due = stretch::splice_due(g, s);
             }
         }
         output[2 * i] = left * 32768;
@@ -923,12 +923,20 @@ static bool render_block(Voice& voice, opxy::i32* output, const opxy::i32* param
         position = state.position;
         time_remainder = state.time_remainder;
         finished = state.finished;
-    } else if (stretch_ready && channels == 2) {
+    } else if (stretch_ready) {
+        // Mono output renders the same stereo block and folds it, so both
+        // layouts test the drift budget at the same frames (the block loops
+        // test it where a playhead crosses a keyframe).
         StretchBlock kept{step, {advances[0], advances[1]}, {crossings[0], crossings[1]}, loop, pitch_step, tuning,
                           play_once};
         LoopState state{position, time_remainder, finished};
-        if (stereo) stretch_stereo<true>(output, grain, source, kept, state);
-        else stretch_stereo<false>(output, grain, source, kept, state);
+        opxy::i32 folded[2 * kBlock];
+        opxy::i32* const target = channels == 2 ? output : folded;
+        if (stereo) stretch_stereo<true>(target, grain, source, kept, state);
+        else stretch_stereo<false>(target, grain, source, kept, state);
+        if (channels != 2)
+            for (int i = 0; i < kBlock; ++i)
+                output[i] = (((folded[2 * i] >> 15) + (folded[2 * i + 1] >> 15)) >> 1) * 32768;
         position = state.position;
         time_remainder = state.time_remainder;
         finished = state.finished;

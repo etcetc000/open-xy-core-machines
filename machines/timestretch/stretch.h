@@ -8,7 +8,11 @@
 namespace timestretch { namespace stretch {
 using namespace timestretch::sample_analysis;
 constexpr u32 kOne = 16384;
-constexpr u32 kLeash = 128;
+// The drift budget: a splice is due when the grain is more than this many
+// source frames off the tempo clock (40 ms at 44.1 kHz). The block
+// loops test it when a playhead crosses a keyframe. Its crossfade spans as
+// many frames.
+constexpr u32 kLeashFrames = 1764;
 inline u32 smooth(u32 p) {
     const u32 square = (p * p) >> 14;
     return (square * (3 * kOne - 2 * p)) >> 14;
@@ -50,31 +54,6 @@ struct Source {
     Key point(u32 anchor) const {
         const u32 forward = rank(*analysis, anchor) + 1 - base_rank;
         return Key{key_position(anchor), reverse ? key_count - forward : forward};
-    }
-    // An unwrapped, local key ordinal in Q8 source samples. Splice queries
-    // span at most 128 adjacent keys, including short loops and reverse.
-    u32 key_time(u32 index) const {
-        const u32 lap = index / key_count, local = index % key_count;
-        u32 position = 0;
-        if (local) {
-            const u32 key = reverse ? base_rank + key_count - local - 1 : base_rank + local - 1;
-            position = key_position(select_key(*analysis, key));
-        }
-        return lap * (frames << 8) + (shift >= 8 ? position >> (shift - 8) : position << (8 - shift));
-    }
-    u32 fade_frames(u32 index, bool behind) const {
-        u32 first = index % key_count, last;
-        if (reverse) {
-            // Upstream always measures behind the physical grid when it
-            // reverses: p2 through p1-leash, 127 intervals ahead in playback.
-            ++first;
-            last = first + kLeash - 1;
-        } else if (behind) {
-            last = first + (kLeash / key_count + 1) * key_count;
-            first = last - (kLeash - 1);
-        } else last = first + kLeash;
-        const u32 span = (key_time(last) - key_time(first)) >> 8;
-        return span < 48 ? 48 : span;
     }
 };
 // Only grain timing follows the sparse keyframe grid. Audio comes directly
@@ -191,12 +170,9 @@ static inline void spawn(Granule& g, const Source& s, u32 position) {
 }
 // A grain splice begins: the incoming grain at the ideal clock, its fade.
 static void splice_begin(Granule& g, const Source& s, u32 time_step, u32 pitch_step, u32 tuning) {
-    const u32 delta = g.actual.window.index - g.ideal.window.index;
     g.temp = g.ideal;
-    // Use the keyframe span to adapt the grain's crossfade duration.
     // Immutable samples have no moving writer fence/runway to clamp.
-    const u32 local_index = g.ideal.window.index - g.ideal.window.lap * s.key_count;
-    const u32 duration = s.fade_frames(local_index, delta >= 0x80000000u);
+    const u32 duration = kLeashFrames;
     const u32 rate = s.sample.rate >= 8000 && s.sample.rate <= 192000 ? s.sample.rate : 44100;
     const u32 outputs = duration * 44100u / rate;
     g.fade_step = 0x40000000u / (outputs ? outputs : 1);
@@ -218,21 +194,44 @@ static void splice_begin(Granule& g, const Source& s, u32 time_step, u32 pitch_s
         } else g.temp.position -= offset;
         g.temp.window = cursor(s, g.temp.position, g.temp.lap);
     }
+    // Centre the drift on the clock: the grain drifts one way until the next
+    // splice, so seat it half a fade (the drift budget) on the other side.
+    // Its timing then swings around the beat instead of always one way.
+    if (pitch_step != time_step) {
+        const u32 half = duration / 2u;
+        const u32 limit = s.loop / 4u;
+        u32 offset = half > (limit >> s.shift) ? limit : half << s.shift;
+        if (pitch_step > time_step) {
+            if (!g.temp.lap && offset > g.temp.position) offset = g.temp.position;
+            if (offset > g.temp.position) {
+                g.temp.position = s.loop - (offset - g.temp.position);
+                --g.temp.lap;
+            } else g.temp.position -= offset;
+        } else {
+            const u32 room = s.loop - g.temp.position;
+            if (offset >= room) {
+                g.temp.position = offset - room;
+                ++g.temp.lap;
+            } else g.temp.position += offset;
+        }
+        g.temp.window = cursor(s, g.temp.position, g.temp.lap);
+    }
     g.fade = 0;
     g.splicing = true;
 }
 // Whether a splice begins: the actual grain leads or trails the ideal clock
-// by more than the leash, in keyframes.
-static inline bool splice_due(const Granule& g) {
-    const u32 delta = g.actual.window.index - g.ideal.window.index;
-    const u32 lead = delta < 0x80000000u ? delta : 0u - delta;
-    return !g.splicing && lead > kLeash;
+// by more than the drift budget, in source frames (laps unwrapped).
+static inline bool splice_due(const Granule& g, const Source& s) {
+    const long long lap = static_cast<long long>(static_cast<i32>(g.actual.lap - g.ideal.lap));
+    const long long delta = lap * s.loop + static_cast<long long>(g.actual.position) - static_cast<long long>(g.ideal.position);
+    const unsigned long long lead = static_cast<unsigned long long>(delta < 0 ? -delta : delta) >> s.shift;
+    return !g.splicing && lead > kLeashFrames;
 }
 static inline void render(Granule& g, const Source& s, u32 time_step, u32 pitch_step,
                           u32 tuning, i32& left, i32& right) {
     step_reference(g.ideal, s);
     step_reference(g.actual, s);
-    if (splice_due(g)) splice_begin(g, s, time_step, pitch_step, tuning);
+    if (splice_due(g, s)) splice_begin(g, s, time_step, pitch_step, tuning);
     advance(g.ideal, s, time_step);
     read_pcm(s, g.actual.position, left, right);
     advance(g.actual, s, pitch_step);

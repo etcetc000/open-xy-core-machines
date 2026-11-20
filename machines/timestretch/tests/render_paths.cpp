@@ -76,12 +76,14 @@ int main() {
             i32 out_wide[128], out_narrow[64];
             timestretch::Controls controls{bool(once), bool(stretch), 1200, 2, 1200};
             u32 ticks = 0, bpm = 1440, region_level = level;
-            for (unsigned b = 0; b < 48; ++b) {
-                if (b == 12) bpm = 1000;                                  // tempo: invalidates the reused set-up
-                if (b == 18) region_level = level == sample_unity_level ? 0x04000000u : sample_unity_level;
-                if (b == 24) { controls.stretch = !controls.stretch; ++switches; } // mode switch
-                if (b == 30) { timestretch::start(wide); timestretch::start(narrow); }
-                if (b == 36) { controls.stretch = !controls.stretch; ++switches; } // and back
+            // Each phase runs long enough for the grain to drift past the
+            // drift budget (1764 frames) and splice.
+            for (unsigned b = 0; b < 144; ++b) {
+                if (b == 36) bpm = 1000;                                  // tempo: invalidates the reused set-up
+                if (b == 54) region_level = level == sample_unity_level ? 0x04000000u : sample_unity_level;
+                if (b == 72) { controls.stretch = !controls.stretch; ++switches; } // mode switch
+                if (b == 90) { timestretch::start(wide); timestretch::start(narrow); }
+                if (b == 108) { controls.stretch = !controls.stretch; ++switches; } // and back
                 const PadSettings settings = timestretch::encode_controls(controls);
                 const u32 end = once ? 1500 : 1700;  // loops wrap; a play-once note ends
                 const SampleRegion region{500, end, region_level, bool(reverse), cents, end, end};
