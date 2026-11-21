@@ -49,6 +49,10 @@ int main() {
     original.Init();candidate.Init();
     original.set_delay(delay);candidate.set_delay(delay);
     original.set_decay(decay);candidate.set_decay(decay);
+    // Init() leaves the level unset until a trigger. Step 0 of the loop always
+    // triggers, but newer compilers cannot see that; this trigger is the same
+    // one, made where they can.
+    original.Trigger(level);candidate.Trigger(level);
     for (unsigned i = 0; i < 4096; ++i) {
       if (!(i % period)) {
         original.Trigger(level);candidate.Trigger(level);
