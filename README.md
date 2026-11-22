@@ -21,6 +21,7 @@ Some have their own sound tests in `tests/`.
 | Extension | What it shows |
 | --- | --- |
 | [Retrospective capture](extensions/capture) | Double-tap Record to replace the sequence with what you just played: claims a key, replaces notes with Undo, tests its gesture with fake actions |
+| [Four LFOs](extensions/multi_lfo) | Four of stock's LFOs per track, all running; Shift + encoder 1 on the LFO page shows LFO 1-4 on stock's own page: claims a page, takes one gesture from it, tests it with fake actions |
 
 Each extension folder holds `extension.json` (its ID, the builder's text, and the
 claims and actions it uses from the SDK's registry), `extension.cpp` and its
