@@ -103,7 +103,7 @@
   ],
   "presets": {},
   "resources": {
-    "voiceCapacity": 256,
+    "voiceCapacity": 32,
     "sampleAnalysis": 2097152,
     "chokeSameKey": 1,
     "padSettings": 1,

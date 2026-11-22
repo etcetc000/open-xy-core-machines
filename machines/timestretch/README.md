@@ -4,8 +4,9 @@ Timestretch plays samples in time with the project, either by repitching or
 with pitch-preserving, Capicola-derived timestretch. It forks the
 stock drum sampler (`"base": "drumSampler"`): each pad has its own sample and settings.
 
-Requires SDK 1.7 or later for tempo-aware lazy chop. Saved BPM/bar memory uses
-the 18-bit settings format introduced in SDK 1.6; older firmware cannot read it.
+Requires SDK 1.17 or later: it uses the SDK's sample kernel and declares 32
+voices, both new in SDK 1.17. Saved BPM/bar memory uses the 18-bit settings
+format introduced in SDK 1.6; older firmware cannot read it.
 
 ## Playing it
 
@@ -74,6 +75,18 @@ the 18-bit settings format introduced in SDK 1.6; older firmware cannot read it.
   forward (`off`) or backward (`on`) playback;
   volume scales the saved volume. Tempo offsets the source BPM by up to ±140
   BPM, or the length by up to ±5 steps. The bundled preset centers them.
+- **Timing in timestretch mode.** A grain may drift from the project's tempo
+  clock by up to 1764 frames of the sample before it is spliced back: 40 ms
+  of a 44.1 kHz sample at its own tempo. The budget counts the sample's
+  frames, so it grows when you slow a loop down and shrinks when you speed it
+  up (a 44.1 kHz loop at half tempo may drift about 80 ms; at 1.5 times its
+  tempo about 27 ms), and a 48 kHz sample gets about 37 ms at its own tempo.
+  Each splice crossfades over 40 ms for a 44.1 kHz sample (about 37 ms at
+  48 kHz), shorter when the pad is tuned up and longer when tuned down. Each
+  new grain starts half the budget (882 frames of the sample) on the other
+  side of the beat, so timing swings around it rather than always running
+  early or late. One known side effect: on a play-once sample the last
+  crossfade can blend up to 882 frames of the region's start.
 - **Analysis.** Timestretch mode needs an analysis of the sample, prepared on
   the stock file worker after assignment; the progress overlay reports it.
   Repitch plays meanwhile; timestretch stays silent until it completes. The
@@ -85,8 +98,15 @@ the 18-bit settings format introduced in SDK 1.6; older firmware cannot read it.
 
 [`sample.cpp`](sample.cpp) renders through the
 [sample engine API](https://github.com/etcetc000/open-xy/blob/staging/docs/api.md#sample-engines). `definition.json`
-declares stereo output, same-key choke, pad settings with drum controls, and a
-2 MiB analysis budget. `sliceTiming` reports the source-frame clock used by lazy chop.
+declares stereo output, same-key choke, pad settings with drum controls, a
+2 MiB analysis budget and 32 voices (`voiceCapacity`; stock starts sample voices
+through 27 voice wrappers). `sliceTiming` reports the source-frame clock used by
+lazy chop.
+Each block computes its playhead positions first, then hands the reads,
+interpolation, pad level and splice crossfades to the SDK's sample kernel
+(`opxy/sample_kernel.hpp`). `tests/sample_kernel.cpp` checks the kernel's C
+reference word for word against the loops it replaced; the SDK's
+documentation says how its device routine is checked against that reference.
 
 - [`controls.h`](controls.h) packs loop/play, mode and BPM-or-length into the
   pad settings, and implements `sample_defaults`, `sample_assign`,
@@ -94,12 +114,26 @@ declares stereo output, same-key choke, pad settings with drum controls, and a
   file-name BPM and suggests a length.
 - [`analysis.h`](analysis.h) prepares a keyframe bitmap per channel: positions
   where the derivative changes sign, at most 256 frames apart. Playback reads
-  the original PCM; keyframes only time grain splices.
+  the original PCM; keyframes only time when grain splices are checked.
   [`stretch.h`](stretch.h) plays grains with linear interpolation and shares
-  playheads and crossfades between channels. Incoming grains that advance
-  faster than the tempo clock start behind it by 75% of their predicted
-  drift during the fade, reducing early attacks without shifting the loop
-  clock. This offset is bounded to a quarter of the trimmed loop and cannot
-  precede initial playback.
+  playheads and crossfades between channels. A splice is due once the grain
+  has drifted more than 1764 source frames (40 ms at 44.1 kHz) from the
+  tempo clock; the block loops check this where a playhead crosses a
+  keyframe, so on sparse material the check can come up to a keyframe gap
+  late. While the grain is too close to the tempo clock for a splice to come
+  due, the loop does not track keyframes at all: it only moves the playheads,
+  and picks the keyframe windows up again where tracking resumes. The sound
+  is unchanged on every case tested, and most material costs less to play;
+  where the grain splices constantly nothing is skipped and the cost is
+  about the same. `tests/stretch_skip.cpp` checks the loop against one
+  that tracks every frame.
+  Each splice crossfades over 1764 source frames. Incoming grains that
+  advance faster than the tempo clock start behind it by 75% of their
+  predicted drift during the fade, and every incoming grain is seated half
+  a crossfade on the far side of the clock from where it will drift, so
+  timing swings around the beat instead of always running early when slowed
+  or late when sped up. Both offsets are bounded to a quarter of the trimmed
+  loop and cannot precede initial playback. Mono output renders the stereo
+  block and folds it, so both layouts splice at the same frames.
 
 See the [upstream revision and AGPL notices](vendor/README.md).
