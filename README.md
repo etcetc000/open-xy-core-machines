@@ -21,10 +21,12 @@ Some have their own sound tests in `tests/`.
 | Extension | What it shows |
 | --- | --- |
 | [Retrospective capture](extensions/capture) | Double-tap Record to replace the sequence with what you just played: claims a key, replaces notes with Undo, tests its gesture with fake actions |
+| [Longer samples](extensions/long_samples) | Samples load up to 1,048,575 frames (23.78 s) instead of 20 s: a settings extension, only `extension.json` declaring the SDK's `long_samples` capability |
+| [Idle threshold](extensions/release_floor) | Released notes stop and free their voice once their envelope falls 40 dB below its peak instead of 66, saving CPU: a settings extension declaring the SDK's `release_floor` capability and choosing its setting |
 
 Each extension folder holds `extension.json` (its ID, the builder's text, and the
 claims and actions it uses from the SDK's registry), `extension.cpp` and its
-tests in `tests/`. Extensions use only the public `<opxy/extension.hpp>` events and
+tests in `tests/`; a settings extension holds only `extension.json` and a README. Extensions use only the public `<opxy/extension.hpp>` events and
 actions; see the SDK's [extensions guide](https://github.com/etcetc000/open-xy/blob/staging/docs/extensions.md).
 
 To write a machine of your own, start from the
